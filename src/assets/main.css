@@ -1,0 +1,25 @@
+@import './base.css';
+@import url("https://fonts.googleapis.com/css2?family=Signika+Negative:wght@300..700&display=swap");
+
+body {
+	font-family: "Signika Negative", sans-serif;
+	font-weight: 100;
+	font-size: 16px;
+	color: black;
+}
+
+input {
+	font-family: "Signika Negative", sans-serif;
+	font-weight: 100;
+	font-size: 16px;
+	border: none;
+}
+
+input:focus{
+	outline: none;
+}
+
+.button {
+	cursor: pointer;
+	border-radius: 5px;
+}
