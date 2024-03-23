@@ -1,6 +1,7 @@
 <script setup>
 import RightArrow from './icons/RightArrow.vue';
-import LeftArrow from './icons/LeftArrow.vue'
+import LeftArrow from './icons/LeftArrow.vue';
+import Subscription from './subscription/subscription.js'
 </script>
 <script>
 let monthName = function(date) {
@@ -40,11 +41,13 @@ export default {
 		},
 		getNextMonth() {
 			currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 1);
-			this.$refs.monthAndYear.innerText = monthName(currentDate.getMonth()) + " " + currentDate.getFullYear()
+			this.$refs.monthAndYear.innerText = monthName(currentDate.getMonth()) + " " + currentDate.getFullYear();
+			Subscription.notify("next-month", currentDate);
 		},
 		getPrevMonth() {
 			currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth()-1, 1);
 			this.$refs.monthAndYear.innerText = monthName(currentDate.getMonth()) + " " + currentDate.getFullYear();
+			Subscription.notify("prev-month", currentDate);
 		}
 	}
 }

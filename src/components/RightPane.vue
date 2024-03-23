@@ -13,6 +13,7 @@
 </template>
 
 <script>
+import Subscription from './subscription/subscription.js';
 let createCalendar = function(month, year){
 	let rows = []
 	let id = 1;
@@ -65,9 +66,19 @@ let createCalendar = function(month, year){
 export default {
 	mounted() {
 		let rows = createCalendar(3, 2024);
-		for(let row of rows){
-		this.$refs.calendarContainer.appendChild(row);
-		}
+		for(let row of rows) this.$refs.calendarContainer.appendChild(row);
+
+		Subscription.subscribe("next-month", (args) => {
+			for (let row of rows) row.remove();
+			rows = createCalendar(args[1].getMonth(), args[1].getFullYear());
+			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
+		});
+
+		Subscription.subscribe("prev-month", (args) => {
+			for (let row of rows) row.remove();
+			rows = createCalendar(args[1].getMonth(), args[1].getFullYear());
+			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
+		})
 	}
 }
 </script>
