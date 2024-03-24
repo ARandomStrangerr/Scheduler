@@ -70,13 +70,13 @@ export default {
 
 		Subscription.subscribe("next-month", (args) => {
 			for (let row of rows) row.remove();
-			rows = createCalendar(args[1].getMonth(), args[1].getFullYear());
+			rows = createCalendar(args[1].getMonth()+1, args[1].getFullYear());
 			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
 		});
 
 		Subscription.subscribe("prev-month", (args) => {
 			for (let row of rows) row.remove();
-			rows = createCalendar(args[1].getMonth(), args[1].getFullYear());
+			rows = createCalendar(args[1].getMonth()+1, args[1].getFullYear());
 			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
 		})
 	}
