@@ -1,15 +1,16 @@
 <script setup>
 import Cross from './icons/Cross.vue'
 import Add from './icons/Add.vue'
+import Check from './icons/Check.vue'
 </script>
 
 <template>
-	<div class='form'>
+	<form class='form'>
 		<input class='title' placeholder='Title'>
 		<div class='priority wrapper'>
-			<div class='button low-priority'>Low Priority</div>
-			<div class='button medium-priority'>Medium Priority</div>
-			<div class='button high-priority'>High Prority</div>
+			<div @click="toggle($event)" class='button low-priority'>Low Priority</div>
+			<div @click="toggle($event)" class='button medium-priority'>Medium Priority</div>
+			<div @click="toggle($event)" class='button high-priority'>High Prority</div>
 		</div>
 		<div class='wrapper'>
 			<input class='date' v-model='today' placeholder='start date'>
@@ -18,14 +19,20 @@ import Add from './icons/Add.vue'
 		</div>
 		<div class='wrapper'>
 			<h2>Tasks</h2>
-			<div class='button' @click='addElement'><Add /></div>
+			<div class='button' @click='addTask()'><Add /></div>
 		</div>
-		<div class='task-list'><input placeholder="task name" v-for="(element, index) in elements" :key="index" v-model="elements[index]"></div>
+		<div class='task-list'>
+			<div class="wrapper" v-for="(task, index) in formData.tasks" :key="index">
+				<div class="button green-button"><Check /></div>
+				<input placeholder="task name" @blur="inputOnChange($event, index)" :value="task">
+				<div class="button red-button" @click="deleteTask(index)"><Cross /></div>
+			</div>
+		</div>
 		<div class='wrapper priority'>
 			<div class='button green-button'>Create</div>
 			<div class='button red-button' @click="$router.push('/')">Cancel</div>
 		</div>
-	</div>
+	</form>
 </template>
 
 <script>
@@ -96,16 +103,44 @@ let getStringDate = function (){
 	returnString += date.getDate() + ", " + date.getFullYear();
 	return returnString;
 }
+let selectedPriority;
+let togglePriority = function (target) {
+	if (selectedPriority) selectedPriority.classList.toggle('active');
+	target.classList.toggle('active');
+	selectedPriority = target;
+}
+let getTaskContainer = function() {
+	let input = document.createElement('input');
+	let deleteButton = document.createElement('input');
+	let wrapper = document.createElement('div');
+	wrapper.appendChid(input);
+	wrapper.appendChild(deleteButton);
+	wrapper.classList.add("wrapper");
+	deleteButton.onClick = () => wrapper.remove();
+}
 export default{
 	data() {
 		return {
 			today: getStringDate(),
-			elements: []
+			formData: {
+				name: "",
+				priority: "",
+				tasks: []
+			}
 		}
 	},
 	methods: {
-		addElement() {
-			this.elements.push("");
+		addTask() {
+			this.formData.tasks.push("");
+		},
+		deleteTask(index) {
+			this.formData.tasks.splice(index, 1);
+		},
+		inputOnChange(event, index){
+			this.formData.tasks[index] = event.target.value;
+		},
+		toggle(event){
+			togglePriority(event.target);
 		}
 	}
 }
@@ -136,15 +171,23 @@ svg{
 	flex-direction: row;
 	justify-content: space-between;
 }
+.task-list > .wrapper {
+	margin-bottom: 0.5em;
+}
+.task-list > .wrapper > input {
+	flex-grow: 1;
+	margin: 0em 1em 0em 1em;
+}
+.task-list > .wrapper > .button {
+	width: 1.5em;
+	height: 1.5em;
+}
 .priority .button {
 	flex-grow: 1;
 	width: 10em;
 	height: 2.5em;
 	border-width: 1px;
 	border-style: solid;
-	display:flex;
-	justify-content: center;
-	align-items: center;
 	border-radius: 0.5em;
 	transition: 0.2s;
 	margin-right: 1em;
@@ -158,17 +201,26 @@ svg{
 .low-priority:hover {
 	background-color: #dfe7fd;
 }
+.low-priority.active {
+	background-color: #cddafd;
+}
 .medium-priority {
 	border-color: #e2ece9;
 }
 .medium-priority:hover {
 	background-color: #e2ece9;
 }
+.medium-priority.active{
+	background-color: #bee1e6;
+}
 .high-priority {
 	border-color: #fde2e4;
 }
 .high-priority:hover {
 	background-color: #fde2e4;
+}
+.high-priority.active {
+	background-color: #fad2e1;
 }
 .date {
 	transition: 0.2s;
