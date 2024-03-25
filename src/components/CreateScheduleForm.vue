@@ -2,20 +2,21 @@
 import Cross from './icons/Cross.vue'
 import Add from './icons/Add.vue'
 import Check from './icons/Check.vue'
+import Axios from 'axios'
 </script>
 
 <template>
-	<form class='form'>
-		<input class='title' placeholder='Title'>
+	<form class='form' @submit.prevent='submitForm'>
+		<input class='title' placeholder='Title' v-model='formData.name'>
 		<div class='priority wrapper'>
 			<div @click="toggle($event)" class='button low-priority'>Low Priority</div>
 			<div @click="toggle($event)" class='button medium-priority'>Medium Priority</div>
 			<div @click="toggle($event)" class='button high-priority'>High Prority</div>
 		</div>
 		<div class='wrapper'>
-			<input class='date' v-model='today' placeholder='start date'>
+			<input class='date' v-model='formData.startDate' placeholder='start date'>
 			-
-			<input class='date' v-model='today' placeholder='end date'>
+			<input class='date' v-model='formData.endDate' placeholder='end date'>
 		</div>
 		<div class='wrapper'>
 			<h2>Tasks</h2>
@@ -29,7 +30,7 @@ import Check from './icons/Check.vue'
 			</div>
 		</div>
 		<div class='wrapper priority'>
-			<div class='button green-button'>Create</div>
+			<div class='button green-button' @click='submitForm'>Create</div>
 			<div class='button red-button' @click="$router.push('/')">Cancel</div>
 		</div>
 	</form>
@@ -125,6 +126,8 @@ export default{
 			formData: {
 				name: "",
 				priority: "",
+				startDate: getStringDate(),
+				endDate: getStringDate(),
 				tasks: []
 			}
 		}
@@ -141,6 +144,15 @@ export default{
 		},
 		toggle(event){
 			togglePriority(event.target);
+			this.formData.priority = event.target.innerText
+		},
+		submitForm() {
+			Axios.post(`${this.expressAddress}/create`, this.formData)
+				.then((response) => {
+					console.log(response);
+				}).catch((response) => {
+					console.log(response);
+				});
 		}
 	}
 }
