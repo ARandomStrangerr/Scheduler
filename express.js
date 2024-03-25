@@ -11,6 +11,7 @@ app.use(express.json());
 
 // routes
 app.post('/create', createTaskFunction);
+app.post('*',(req, res) => {res.send("HELLO")})
 
 // start listening
 app.listen(PORT, listenFcn)
@@ -29,6 +30,7 @@ function createTaskFunction (request, response){
 		response.status(400).send("Missing end date");
 		return;
 	}
+	console.log(request.body);
 }
 
 function listenFcn() {

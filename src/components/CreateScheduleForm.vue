@@ -3,6 +3,7 @@ import Cross from './icons/Cross.vue'
 import Add from './icons/Add.vue'
 import Check from './icons/Check.vue'
 import Axios from 'axios'
+import Subscription from './subscription/subscription.js'
 </script>
 
 <template>
@@ -120,6 +121,7 @@ let getTaskContainer = function() {
 	deleteButton.onClick = () => wrapper.remove();
 }
 export default{
+	inject: ['expressAddress'],
 	data() {
 		return {
 			today: getStringDate(),
@@ -151,7 +153,7 @@ export default{
 				.then((response) => {
 					console.log(response);
 				}).catch((response) => {
-					console.log(response);
+					Subscription.notify("notification", response.response.data, "error");
 				});
 		}
 	}
