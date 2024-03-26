@@ -40,70 +40,7 @@ import Subscription from './subscription/subscription.js'
 <script>
 let getStringDate = function (){
 	let date = new Date();
-	let returnString = "";
-	switch (date.getDay()){
-		case 0:
-			returnString += "Monday, ";
-			break;
-		case 1:
-			returnString += "Tuesday, ";
-			break;
-		case 2:
-			returnString += "Wendnesday, ";
-			break;
-		case 3:
-			returnString += "Thursday, ";
-			break;
-		case 4:
-			returnString += "Friday, ";
-			break;
-		case 5:
-			returnString += "Saturday, ";
-			break;
-		case 6:
-			returnString += "Sunday, ";
-			break;
-	}
-	switch (date.getMonth()) {
-		case 0:
-			returnString += "January ";
-			break;
-		case 1:
-			returnString += "Febuary ";
-			break;
-		case 2:
-			returnString += "March ";
-			break;
-		case 3:
-			returnString += "April ";
-			break;
-		case 4:
-			returnString += "May ";
-			break;
-		case 5:
-			returnString += "Jun ";
-			break;
-		case 6:
-			returnString += "July ";
-			break;
-		case 7:
-			returnString += "August ";
-			break;
-		case 8:
-			returnString += "September ";
-			break;
-		case 9:
-			returnString += "October ";
-			break;
-		case 10:
-			returnString += "November ";
-			break;
-		case 11:
-			returnString += "December ";
-			break;
-	}
-	returnString += date.getDate() + ", " + date.getFullYear();
-	return returnString;
+	return `${date.getFullYear()} ${date.getMonth()} ${date.getDate()}`;
 }
 let selectedPriority;
 let togglePriority = function (target) {
@@ -151,7 +88,8 @@ export default{
 		submitForm() {
 			Axios.post(`${this.expressAddress}/create`, this.formData)
 				.then((response) => {
-					console.log(response);
+					Subscription.notify('notification', response.data, 'success');
+					this.$router.push('/');
 				}).catch((response) => {
 					Subscription.notify("notification", response.response.data, "error");
 				});

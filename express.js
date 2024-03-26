@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import {getSchedule, createSchedule, connect} from "./MongooseController.js"
 
 // constants
 const app = express();
@@ -10,11 +11,17 @@ app.use(cors());
 app.use(express.json());
 
 // routes
+app.get('/', getCalendar)
 app.post('/create', createTaskFunction);
-app.post('*',(req, res) => {res.send("HELLO")})
 
 // start listening
 app.listen(PORT, listenFcn)
+
+let recentCreateSchedule;
+
+async function getCalendar (request, response) {
+	response.status(200).send(await getSchedule());
+}
 
 function createTaskFunction (request, response){
 	if (!request.body.name || request.body.name.trim() === ""){
@@ -30,9 +37,11 @@ function createTaskFunction (request, response){
 		response.status(400).send("Missing end date");
 		return;
 	}
-	console.log(request.body);
+	createSchedule(request.body.name, request.body.priority, request.body.startDate, request.body.enDate, request.body.tasks);
+	response.status(200).send("Success create task");
 }
 
 function listenFcn() {
+	connect('localhost', 27017, 'ScheduleDatabase')
 	console.log(`listening at port ${PORT}`);
 }
