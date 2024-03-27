@@ -33,6 +33,7 @@ export default {
 				this.schedules = response.data;
 			})
 			.catch((response) => {
+				console.log(response);
 				Subscription.notify('notification', response.response.data, 'error');
 			})
 	}

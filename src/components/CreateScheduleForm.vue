@@ -8,11 +8,11 @@ import Subscription from './subscription/subscription.js'
 
 <template>
 	<form class='form' @submit.prevent='submitForm'>
-		<input class='title' placeholder='Title' v-model='formData.name'>
+		<input class='title' placeholder='Title' v-model='formData.title'>
 		<div class='priority wrapper'>
 			<div @click="toggle($event)" class='button low-priority'>Low Priority</div>
 			<div @click="toggle($event)" class='button medium-priority'>Medium Priority</div>
-			<div @click="toggle($event)" class='button high-priority'>High Prority</div>
+			<div @click="toggle($event)" class='button high-priority'>High Priority</div>
 		</div>
 		<div class='wrapper'>
 			<input class='date' v-model='formData.startDate' placeholder='start date'>
@@ -63,7 +63,7 @@ export default{
 		return {
 			today: getStringDate(),
 			formData: {
-				name: "",
+				title: "",
 				priority: "",
 				startDate: getStringDate(),
 				endDate: getStringDate(),

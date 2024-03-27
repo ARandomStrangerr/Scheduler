@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import {getSchedule, createSchedule, connect} from "./MongooseController.js"
+import * as MongooseFunctions from "./MongooseController.js"
 
 // constants
 const app = express();
@@ -11,20 +11,26 @@ app.use(cors());
 app.use(express.json());
 
 // routes
-app.get('/', getCalendar)
-app.post('/create', createTaskFunction);
+app.get('/', getSchedules);
+app.post('/create', createSchedule);
+app.get('/:id', getSchedule);
+app.delete('/:id', deleteSchedule);
+app.put('/:id', updateSchedule);
+app.get('*', (req, res) => res.status(404));
 
 // start listening
 app.listen(PORT, listenFcn)
 
-let recentCreateSchedule;
-
-async function getCalendar (request, response) {
-	response.status(200).send(await getSchedule());
+async function getSchedules (request, response) {
+	response.status(200).send(await MongooseFunctions.getSchedule());
 }
 
-function createTaskFunction (request, response){
-	if (!request.body.name || request.body.name.trim() === ""){
+async function getSchedule (request, response) {
+	response.status(200).send(await MongooseFunctions.getScheduleById(request.params.id));
+}
+
+function createSchedule (request, response){
+	if (!request.body.title || request.body.title.trim() === ""){
 		response.status(400).send("Missing task name");
 		return;
 	} else if (!request.body.priority || request.body.priority === ""){
@@ -37,11 +43,19 @@ function createTaskFunction (request, response){
 		response.status(400).send("Missing end date");
 		return;
 	}
-	createSchedule(request.body.name, request.body.priority, request.body.startDate, request.body.enDate, request.body.tasks);
-	response.status(200).send("Success create task");
+	MongooseFunctions.createSchedule(request.body.title, request.body.priority, request.body.startDate, request.body.endDate, request.body.tasks);
+	response.status(200).send("Success create schedule");
+}
+async function deleteSchedule (request, response) {
+	await MongooseFunctions.deleteSchedule(request.params.id);
+	response.status(200).send("Success delete schedule");
+}
+async function updateSchedule (request, response) {
+	await MongooseFunctions.updateScheduleById(request.body.id, request.body.title, request.body.priority, request.body.startDate, request.body.endDate, request.body.tasks)
+	response.status(200).send("Success update schedule");
 }
 
 function listenFcn() {
-	connect('localhost', 27017, 'ScheduleDatabase')
+	MongooseFunctions.connect('localhost', 27017, 'ScheduleDatabase')
 	console.log(`listening at port ${PORT}`);
 }

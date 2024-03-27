@@ -8,11 +8,11 @@ import Subscription from './subscription/subscription.js'
 
 <template>
 	<form class='form' @submit.prevent='submitForm'>
-		<input class='title' placeholder='Title' v-model='formData.name'>
+		<input class='title' placeholder='Title' v-model='formData.title'>
 		<div class='priority wrapper'>
-			<div @click="toggle($event)" class='button low-priority'>Low Priority</div>
-			<div @click="toggle($event)" class='button medium-priority'>Medium Priority</div>
-			<div @click="toggle($event)" class='button high-priority'>High Prority</div>
+			<div @click="toggle($event)" ref="lowPriority" class='button low-priority'>Low Priority</div>
+			<div @click="toggle($event)" ref="mediumPriority" class='button medium-priority'>Medium Priority</div>
+			<div @click="toggle($event)" ref="highPriority" class='button high-priority'>High Prority</div>
 		</div>
 		<div class='wrapper'>
 			<input class='date' v-model='formData.startDate' placeholder='start date'>
@@ -31,8 +31,8 @@ import Subscription from './subscription/subscription.js'
 			</div>
 		</div>
 		<div class='wrapper priority'>
-			<div class='button green-button' @click='submitForm'>Create</div>
-			<div class='button red-button'>Delete</div>
+			<div class='button green-button' @click='submitForm'>Update</div>
+			<div class='button red-button' @click='deleteAction'>Delete</div>
 			<div class='button yellow-border' @click="$router.push('/')">Cancel</div>
 		</div>
 	</form>
@@ -87,14 +87,45 @@ export default{
 			this.formData.priority = event.target.innerText
 		},
 		submitForm() {
-			Axios.post(`${this.expressAddress}/create`, this.formData)
+			Axios.put(`${this.expressAddress}/${this.$route.params.id}`, this.formData)
 				.then((response) => {
 					Subscription.notify('notification', response.data, 'success');
 					this.$router.push('/');
 				}).catch((response) => {
 					Subscription.notify("notification", response.response.data, "error");
 				});
+		},
+		deleteAction() {
+			Axios.delete(`${this.expressAddress}/${this.$route.params.id}`)
+				.then((response) => {
+					Subscription.notify('notification', response.data, 'success');
+					this.$router.push('/');
+				}).catch((response) => {
+					Subscription.notify("notification", response.response.data, "error");
+				})
 		}
+	},
+	mounted() {
+		Axios.get(`${this.expressAddress}/${this.$route.params.id}`)
+			.then((response) => {
+				this.formData = response.data;
+				this.formData.id = this.$route.params.id;
+				switch (this.formData.priority){
+					case 'Low Priority':
+					this.$refs.lowPriority.click();
+					break;
+					case 'Medium Priority':
+					this.$refs.mediumPriority.click();
+					break;
+					case 'High Priority':
+					this.$refs.highPriority.click();
+					break;
+				}
+			})
+			.catch((response) => {
+				console.log(response)
+				Subscription.notify("notification", "Oof, somehting went wrong!!!", "error");
+			})
 	}
 }
 </script>
