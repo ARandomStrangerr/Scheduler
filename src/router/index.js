@@ -7,6 +7,11 @@ const router = createRouter({
 			path: '/create',
 			name: 'create',
 			component: () => import('../views/CreateScheduleModal.vue')
+		},
+		{
+			path: '/update/:id',
+			name: 'update',
+			component: () => import ('../views/UpdateScheduleModal.vue')
 		}
 	]
 })
