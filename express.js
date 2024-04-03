@@ -26,7 +26,8 @@ async function getSchedules (request, response) {
 }
 
 async function getSchedule (request, response) {
-	response.status(200).send(await MongooseFunctions.getScheduleById(request.params.id));
+	let responseData = await MongooseFunctions.getScheduleById(request.params.id);
+	response.status(200).send(responseData);
 }
 
 function createSchedule (request, response){
@@ -36,20 +37,19 @@ function createSchedule (request, response){
 	} else if (!request.body.priority || request.body.priority === ""){
 		response.status(400).send("Missing priority");
 		return;
-	} else if (!request.body.startDate || request.body.startDate === ""){
-		response.status(400).send("Missing start date");
-		return;
-	} else if (!request.body.endDate || request.body.endDate === "") {
-		response.status(400).send("Missing end date");
-		return;
 	}
-	MongooseFunctions.createSchedule(request.body.title, request.body.priority, request.body.startDate, request.body.endDate, request.body.tasks);
+	// for (let index in request.body.tasks){
+	// 	if (body.tasks[index]))
+	// }
+	MongooseFunctions.createSchedule(request.body.title, request.body.priority, request.body.tasks);
 	response.status(200).send("Success create schedule");
 }
+
 async function deleteSchedule (request, response) {
 	await MongooseFunctions.deleteSchedule(request.params.id);
 	response.status(200).send("Success delete schedule");
 }
+
 async function updateSchedule (request, response) {
 	await MongooseFunctions.updateScheduleById(request.body.id, request.body.title, request.body.priority, request.body.startDate, request.body.endDate, request.body.tasks)
 	response.status(200).send("Success update schedule");

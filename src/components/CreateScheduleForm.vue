@@ -15,20 +15,24 @@ import Subscription from './subscription/subscription.js'
 			<div @click="toggle($event)" class='button high-priority'>High Priority</div>
 		</div>
 		<div class='wrapper'>
-			<input class='date' v-model='formData.startDate' placeholder='start date'>
-			-
-			<input class='date' v-model='formData.endDate' placeholder='end date'>
-		</div>
-		<div class='wrapper'>
 			<h2>Tasks</h2>
 			<div class='button' @click='addTask()'><Add /></div>
 		</div>
-		<div class='task-list'>
-			<div class="wrapper" v-for="(task, index) in formData.tasks" :key="index">
+		<div class='task-list' v-for="(task, index) in formData.tasks">
+			<div class="wrapper" :key="index">
 				<div class="button green-button"><Check /></div>
-				<input placeholder="task name" @blur="inputOnChange($event, index)" :value="task">
+				<input placeholder="task name" v-model="formData.tasks[index].task">
 				<div class="button red-button" @click="deleteTask(index)"><Cross /></div>
 			</div>
+			<div class='wrapper'>
+				Deadline Date
+				<input type='date' placeholder='deadline' ref="deadlineDate" v-model="formData.tasks[index].date">
+				Hour
+				<input type="number" min="0" max="23" placeholder="HH" v-model="formData.tasks[index].hour" ref="deadlineHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				Minute
+				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="formData.tasks[index].minute" ref="deadlineMinutes" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+			</div>
+			<textarea placeholder='note' rows='2' v-model='formData.tasks[index].note' />
 		</div>
 		<div class='wrapper priority'>
 			<div class='button green-button' @click='submitForm'>Create</div>
@@ -65,15 +69,13 @@ export default{
 			formData: {
 				title: "",
 				priority: "",
-				startDate: getStringDate(),
-				endDate: getStringDate(),
-				tasks: []
+				tasks: [{}]
 			}
 		}
 	},
 	methods: {
 		addTask() {
-			this.formData.tasks.push("");
+			this.formData.tasks.push({});
 		},
 		deleteTask(index) {
 			this.formData.tasks.splice(index, 1);
@@ -85,7 +87,37 @@ export default{
 			togglePriority(event.target);
 			this.formData.priority = event.target.innerText
 		},
+		updateDeadline(index) {
+			this.formData.tasks[index].deadline=`${this.$refs.deadlineDate.value}T${this.$refs.deadlineHour.value}:${this.$refs.deadlineMinutes.value}`
+			console.log(this.formData);
+		},
 		submitForm() {
+			if (!this.formData.title || this.formData.title.trim() === ""){
+				Subscription.notify("notification", "Tittle of the schedule is empty", "error");
+				return;
+			} else if (this.formData.priority===""){
+				Subscription.notify("notification", "Priority of the schedule has not been selected", "error");
+				return;
+			}
+			for (let task of this.formData.tasks){
+				if (!task.task || task.task.trim() === "") {
+					Subscription.notify("notification", "Task name is empty", "error");
+					return;
+				} else if (!task.date) {
+					Subscription.notify("notification", "Deadline for the task has not been selected", "error");
+					return;
+				} else if (task.hour && (task.hour<=0 || task.hour>=24)) {
+					Subscription.notify("notification", "Incorrect hour format for task", "error");
+					return;
+				} else if (task.hour && (task.minutes <=0 || task.minute>=60)) {
+					Subscription.notify("notification", "Incorrect minute format for task", "error");
+					return;
+				}
+				task.deadline = `${task.date}T${task.hour?task.hour:"00"}:${task.minute?task.minute:"00"}:00Z`;
+				delete task.date;
+				delete task.hour;
+				delete task.minute
+			}
 			Axios.post(`${this.expressAddress}/create`, this.formData)
 				.then((response) => {
 					Subscription.notify('notification', response.data, 'success');
@@ -105,6 +137,11 @@ export default{
 	border-radius: 1em;
 	background-color: white;
 	box-shadow: 10px 5px 5px #6c757d;
+	max-height:80vh;
+	overflow-y: scroll;
+}
+.form::-webkit-scrollbar {
+	display:none;
 }
 .form > div {
 	margin-bottom: 1em;
@@ -122,6 +159,16 @@ svg{
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;
+}
+.task-list {
+	display: flex;
+	flex-direction: column;
+}
+input {
+	margin-bottom: 0.5em;
+	border-width: 0px 0px 1px 0px;
+	border-style: solid;
+	border-color: #fdf3d9
 }
 .task-list > .wrapper {
 	margin-bottom: 0.5em;
@@ -146,6 +193,11 @@ svg{
 }
 .priority div:last-child{
 	margin-right: 0px;
+}
+textarea {
+	border-width: 0px 0px 1px 0px;
+	border-style: solid;
+	border-color: #fdf3d9;
 }
 .low-priority {
 	border-color: #dfe7fd;
@@ -185,16 +237,6 @@ svg{
 }
 .date:focus {
 	background-color: #fdf3d9;
-}
-.task-list {
-	display: flex;
-	flex-direction: column;
-}
-.task-list input {
-	margin-bottom: 0.5em;
-	border-width: 0px 0px 1px 0px;
-	border-style: solid;
-	border-color: #fdf3d9
 }
 .green-button {
 	border-color: #e2ece9;
