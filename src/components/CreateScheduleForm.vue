@@ -16,23 +16,32 @@ import Subscription from './subscription/subscription.js'
 		</div>
 		<div class='wrapper'>
 			<h2>Tasks</h2>
-			<div class='button' @click='addTask()'><Add /></div>
+			<div class='button' @click='add("deadline")'>Add Deadline</div>
+			<div class='button' @click='add("schedule")'>Add Schedule</div>
 		</div>
 		<div class='task-list' v-for="(task, index) in formData.tasks">
 			<div class="wrapper" :key="index">
 				<div class="button green-button"><Check /></div>
-				<input placeholder="task name" v-model="formData.tasks[index].task">
+				<input placeholder="task name" v-model="task.task">
 				<div class="button red-button" @click="deleteTask(index)"><Cross /></div>
 			</div>
-			<div class='wrapper'>
-				Deadline Date
-				<input type='date' placeholder='deadline' ref="deadlineDate" v-model="formData.tasks[index].date">
+			<div class='wrapper' v-if="task.type==='schedule'">
+				Start
+				<input type='date' placeholder='start' v-model="task.startDate">
 				Hour
-				<input type="number" min="0" max="23" placeholder="HH" v-model="formData.tasks[index].hour" ref="deadlineHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				<input type="number" min="0" max="23" placeholder="HH" v-model="task.starHour" ref="startHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 				Minute
-				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="formData.tasks[index].minute" ref="deadlineMinutes" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.minute" ref="startMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 			</div>
-			<textarea placeholder='note' rows='2' v-model='formData.tasks[index].note' />
+			<div class='wrapper'>
+				End
+				<input type='date' placeholder='deadline' ref="deadlineDate" v-model="task.endDate">
+				Hour
+				<input type="number" min="0" max="23" placeholder="HH" v-model="task.endHour" ref="endHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				Minute
+				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.minute" ref="endMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+			</div>
+			<textarea placeholder='note' rows='2' v-model='task.note' />
 		</div>
 		<div class='wrapper priority'>
 			<div class='button green-button' @click='submitForm'>Create</div>
@@ -74,8 +83,8 @@ export default{
 		}
 	},
 	methods: {
-		addTask() {
-			this.formData.tasks.push({});
+		add(type) {
+			this.formData.tasks.push({type: type});
 		},
 		deleteTask(index) {
 			this.formData.tasks.splice(index, 1);
@@ -86,10 +95,6 @@ export default{
 		toggle(event){
 			togglePriority(event.target);
 			this.formData.priority = event.target.innerText
-		},
-		updateDeadline(index) {
-			this.formData.tasks[index].deadline=`${this.$refs.deadlineDate.value}T${this.$refs.deadlineHour.value}:${this.$refs.deadlineMinutes.value}`
-			console.log(this.formData);
 		},
 		submitForm() {
 			if (!this.formData.title || this.formData.title.trim() === ""){
@@ -103,20 +108,32 @@ export default{
 				if (!task.task || task.task.trim() === "") {
 					Subscription.notify("notification", "Task name is empty", "error");
 					return;
-				} else if (!task.date) {
+				} else if (!task.endDate) {
 					Subscription.notify("notification", "Deadline for the task has not been selected", "error");
 					return;
-				} else if (task.hour && (task.hour<=0 || task.hour>=24)) {
+				} else if (task.endHour && (task.endHour<=0 || task.endHour>=24)) {
 					Subscription.notify("notification", "Incorrect hour format for task", "error");
 					return;
-				} else if (task.hour && (task.minutes <=0 || task.minute>=60)) {
+				} else if (task.endMinute && (task.endMinute <=0 || task.endMinute>=60)) {
 					Subscription.notify("notification", "Incorrect minute format for task", "error");
 					return;
 				}
-				task.deadline = `${task.date}T${task.hour?task.hour:"00"}:${task.minute?task.minute:"00"}:00Z`;
-				delete task.date;
-				delete task.hour;
-				delete task.minute
+				task.start = `${task.startDate}T${task.startHour?task.startHour:"00"}:${task.startMinute?task.startMinute:"00"}:00Z`;
+				let today = new Date();
+				let deadlineDay = new Date(deadline);
+				if (today > deadlineDay) {
+					Subscription.notify("notification", "Deadline cannot be before the current time", "error");
+					return;
+				}
+				if(task.type === 'schedule'){
+					task.end = `${task.endDate}T${task.endHour?task.endHour:"00"}:${task.endMinute?task.endMinute:"00"}:00Z`;
+				}
+				delete task.startDate;
+				delete task.endDate;
+				delete task.startHour;
+				delete task.endHour;
+				delete task.startMinute;
+				delete task.endMinute;
 			}
 			Axios.post(`${this.expressAddress}/create`, this.formData)
 				.then((response) => {

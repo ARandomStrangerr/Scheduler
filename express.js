@@ -32,15 +32,24 @@ async function getSchedule (request, response) {
 
 function createSchedule (request, response){
 	if (!request.body.title || request.body.title.trim() === ""){
-		response.status(400).send("Missing task name");
+		response.status(400).send("Missing schedule name");
 		return;
 	} else if (!request.body.priority || request.body.priority === ""){
 		response.status(400).send("Missing priority");
 		return;
 	}
-	// for (let index in request.body.tasks){
-	// 	if (body.tasks[index]))
-	// }
+	for (let task of request.body.tasks){
+		if (!task.task || task.task.trim()){
+			response.status(400).send("Missing task name");
+			return;
+		} else if (!task.deadline) {
+			response.status(400).send("Missing deadline");
+			return;
+		} else if(new Date() >= new Date(task.deadline)){
+			response.status(400).send("Deadline of task cannot be before the current time");
+			return;
+		}
+	}
 	MongooseFunctions.createSchedule(request.body.title, request.body.priority, request.body.tasks);
 	response.status(200).send("Success create schedule");
 }

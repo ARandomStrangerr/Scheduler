@@ -10,8 +10,10 @@ const scheduleShematic = new Mongoose.Schema({
 	tasks:{
 		type: [
 			{
+				type: {type: String, requre: true, enum: ['schedule', 'deadline']},
 				task: {type: String, require: true},
-				deadline: {type: Date, require: true},
+				start: {type: Date, require: false},
+				end: {type: Date, require: true},
 				note: {type: String, require: false},
 				complete: {type: Boolean, require: true, default: false}
 			}
