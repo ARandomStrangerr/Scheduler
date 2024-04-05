@@ -31,7 +31,7 @@ import Subscription from './subscription/subscription.js'
 				Hour
 				<input type="number" min="0" max="23" placeholder="HH" v-model="task.starHour" ref="startHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 				Minute
-				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.minute" ref="startMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.startMinute" ref="startMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 			</div>
 			<div class='wrapper'>
 				End
@@ -39,7 +39,7 @@ import Subscription from './subscription/subscription.js'
 				Hour
 				<input type="number" min="0" max="23" placeholder="HH" v-model="task.endHour" ref="endHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 				Minute
-				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.minute" ref="endMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.endMinute" ref="endMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 			</div>
 			<textarea placeholder='note' rows='2' v-model='task.note' />
 		</div>
@@ -78,7 +78,7 @@ export default{
 			formData: {
 				title: "",
 				priority: "",
-				tasks: [{}]
+				tasks: []
 			}
 		}
 	},
@@ -118,16 +118,14 @@ export default{
 					Subscription.notify("notification", "Incorrect minute format for task", "error");
 					return;
 				}
-				task.start = `${task.startDate}T${task.startHour?task.startHour:"00"}:${task.startMinute?task.startMinute:"00"}:00Z`;
+				task.end = `${task.endDate}T${task.endHour?task.endHour:"00"}:${task.endMinute?task.endMinute:"00"}:00Z`;
 				let today = new Date();
-				let deadlineDay = new Date(deadline);
+				let deadlineDay = new Date(task.start);
 				if (today > deadlineDay) {
 					Subscription.notify("notification", "Deadline cannot be before the current time", "error");
 					return;
 				}
-				if(task.type === 'schedule'){
-					task.end = `${task.endDate}T${task.endHour?task.endHour:"00"}:${task.endMinute?task.endMinute:"00"}:00Z`;
-				}
+				if(task.type === 'schedule') task.start = `${task.startDate}T${task.startHour?task.startHour:"00"}:${task.startMinute?task.startMinute:"00"}:00Z`;
 				delete task.startDate;
 				delete task.endDate;
 				delete task.startHour;

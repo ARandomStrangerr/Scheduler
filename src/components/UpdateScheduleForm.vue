@@ -10,9 +10,9 @@ import Subscription from './subscription/subscription.js'
 	<form class='form' @submit.prevent='submitForm'>
 		<input class='title' placeholder='Title' v-model='formData.title'>
 		<div class='priority wrapper'>
-			<div @click="toggle($event)" class='button low-priority'>Low Priority</div>
-			<div @click="toggle($event)" class='button medium-priority'>Medium Priority</div>
-			<div @click="toggle($event)" class='button high-priority'>High Priority</div>
+			<div @click="toggle($event)" ref="lowPriority" class='button low-priority'>Low Priority</div>
+			<div @click="toggle($event)" ref="mediumPriority" class='button medium-priority'>Medium Priority</div>
+			<div @click="toggle($event)" ref="highPriority" class='button high-priority'>High Priority</div>
 		</div>
 		<div class='wrapper'>
 			<h2>Tasks</h2>
@@ -39,7 +39,7 @@ import Subscription from './subscription/subscription.js'
 				Hour
 				<input type="number" min="0" max="23" placeholder="HH" v-model="task.endHour" ref="endHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 				Minute
-				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.minute" ref="endMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.endMinute" ref="endMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 			</div>
 			<textarea placeholder='note' rows='2' v-model='task.note' />
 		</div>
@@ -160,7 +160,7 @@ export default{
 		Axios.get(`${this.expressAddress}/${this.$route.params.id}`)
 			.then((response) => {
 				this.formData = response.data;
-				this.formData.id = this.$route.params.id;
+				console.log(this.formData);
 				switch (this.formData.priority){
 					case 'Low Priority':
 					this.$refs.lowPriority.click();
@@ -173,13 +173,19 @@ export default{
 					break;
 				}
 				for(let task of this.formData.tasks){
-					let deadlineSplit = task.deadline.split("T");
+					let deadlineSplit = task.end.split("T");
 					let timeSplit = deadlineSplit[1].split(":");
-					task.date = deadlineSplit[0];
-					task.hour = timeSplit[0];
-					task.minute = timeSplit[1];
+					task.endDate = deadlineSplit[0];
+					task.endHour = timeSplit[0];
+					task.endMinute = timeSplit[1];
+					if (task.start){
+						let startTimeSplit = task.start.split("T");
+						let timeSplit = startTimeSplit[1].split(":");
+						task.startDate = startTimeSplit[0];
+						task.startHour = timeSplit[0];
+						task.startMinute = timeSplit[1];
+					}
 				}
-				console.log(this.formData);
 			})
 			.catch((response) => {
 				Subscription.notify("notification", "Oof, somehting went wrong!!!", "error");

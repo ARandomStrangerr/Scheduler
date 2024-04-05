@@ -38,15 +38,15 @@ function createSchedule (request, response){
 		response.status(400).send("Missing priority");
 		return;
 	}
-	for (let task of request.body.tasks){
-		if (!task.task || task.task.trim()){
-			response.status(400).send("Missing task name");
+	for (let index in request.body.tasks){
+		if (!request.body.tasks[index].task || !request.body.tasks[index].task.trim()){
+			response.status(400).send(`Sub-task of index ${index} does not have name`);
 			return;
-		} else if (!task.deadline) {
-			response.status(400).send("Missing deadline");
+		} else if (!request.body.tasks[index].end) {
+			response.status(400).send(`Sub-task of index ${index} does not have deadline`);
 			return;
-		} else if(new Date() >= new Date(task.deadline)){
-			response.status(400).send("Deadline of task cannot be before the current time");
+		} else if(new Date() >= new Date(request.body.tasks[index].end)){
+			response.status(400).send(`Sub-task of index ${index}, deadline cannot before the current time`);
 			return;
 		}
 	}
