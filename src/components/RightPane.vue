@@ -9,66 +9,55 @@
 			<div class='cell'>Fri</div>
 			<div class='cell'>Sat</div>
 		</div>
+		<div v-for="(row, i) of dates" :key='i' class='row'>
+			<div v-for="(cell, j) of row" :key='j' class='cell'>
+				<div class='button'>{{cell.date}}</div>
+			</div>
+		</div>
 	</div>
 </template>
 
 <script>
 import Subscription from './subscription/subscription.js';
-let createCalendar = function(month, year){
-	let rows = []
-	let id = 1;
+let createDate = function(month, year) {
+	let rows = [];
 	let lastDayPrevMonth = new Date(year, month - 1, 0);
 	let firstDayThisMonth = new Date(year, month - 1, 1);
 	let lastDayThisMonth = new Date (year, month, 0);
-	let today = new Date();
-	let row = document.createElement('div');
+	let row = [];
 	for (let date = lastDayPrevMonth.getDate() - firstDayThisMonth.getDay() + 1; date <= lastDayPrevMonth.getDate(); date++){
-		let dateContainer = document.createElement('div');
-		dateContainer.innerText = date;
-		dateContainer.classList.add('button');
-		let cell = document.createElement('div');
-		cell.classList.add('cell');
-		cell.classList.add('not-in-month');
-		cell.appendChild(dateContainer);
-		row.appendChild(cell);
+		row.push({
+			date: date
+		});
 	}
 	for (let date = 1; date <= lastDayThisMonth.getDate(); date++){
-		let dateContainer = document.createElement('div');
-		dateContainer.innerText = date;
-		dateContainer.classList.add('button');
-		let cell = document.createElement('div');
-		cell.classList.add('cell');
-		cell.appendChild(dateContainer);
-		row.appendChild(cell);
-		if (date == today.getDate()) cell.classList.add('today');
-		if (row.children.length == 7) {
-			row.classList.add('row')
+		row.push({
+			date: date
+		});
+		if (row.length===7){
 			rows.push(row);
-			row = document.createElement('div');
+			row=[];
 		}
 	}
-	for (let date = 1; row.children.length < 7; date++) {
-		let dateContainer = document.createElement('div');
-		dateContainer.innerText = date;
-		dateContainer.classList.add('button');
-		let cell = document.createElement('div');
-		cell.classList.add('cell');
-		cell.classList.add('not-in-month');
-		cell.innerText = date;
-		row.appendChild(cell);
-		if (row.children.length == 7) {
-			row.classList.add('row')
-			rows.push(row);
-		}
+	for (let date = 1; row.length < 7; date++) {
+		row.push({
+			date: date
+		});
+		if (row.length===7) rows.push(row);
 	}
 	return rows;
 }
 export default {
+	data(){
+		return {
+			dates: []
+		}
+	},
 	mounted() {
-		let rows = createCalendar(3, 2024);
-		for(let row of rows) this.$refs.calendarContainer.appendChild(row);
+		let today = new Date();
+		this.dates = createDate(today.getMonth()+1, today.getFullYear());
 
-		Subscription.subscribe("next-month", (args) => {
+		Subscription.subscribe("net-month", (args) => {
 			for (let row of rows) row.remove();
 			rows = createCalendar(args[1].getMonth()+1, args[1].getFullYear());
 			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
