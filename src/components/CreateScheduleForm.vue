@@ -111,10 +111,10 @@ export default{
 				} else if (!task.endDate) {
 					Subscription.notify("notification", "Deadline for the task has not been selected", "error");
 					return;
-				} else if (task.endHour && (task.endHour<=0 || task.endHour>=24)) {
+				} else if (task.endHour && (task.endHour<0 || task.endHour>=24)) {
 					Subscription.notify("notification", "Incorrect hour format for task", "error");
 					return;
-				} else if (task.endMinute && (task.endMinute <=0 || task.endMinute>=60)) {
+				} else if (task.endMinute && (task.endMinute<0 || task.endMinute>=60)) {
 					Subscription.notify("notification", "Incorrect minute format for task", "error");
 					return;
 				}

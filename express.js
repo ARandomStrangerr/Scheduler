@@ -60,7 +60,7 @@ async function deleteSchedule (request, response) {
 }
 
 async function updateSchedule (request, response) {
-	await MongooseFunctions.updateScheduleById(request.body.id, request.body.title, request.body.priority, request.body.startDate, request.body.endDate, request.body.tasks)
+	await MongooseFunctions.updateScheduleById(request.body._id, request.body.title, request.body.priority, request.body.tasks)
 	response.status(200).send("Success update schedule");
 }
 

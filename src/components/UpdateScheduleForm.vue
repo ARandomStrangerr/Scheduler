@@ -19,9 +19,9 @@ import Subscription from './subscription/subscription.js'
 			<div class='button' @click='add("deadline")'>Add Deadline</div>
 			<div class='button' @click='add("schedule")'>Add Schedule</div>
 		</div>
-		<div class='task-list' v-for="(task, index) in formData.tasks">
+		<div :class='{"task-list":true, "task-complete":task.complete}' v-for="(task, index) in formData.tasks">
 			<div class="wrapper" :key="index">
-				<div class="button green-button"><Check /></div>
+				<div class="button green-button" @click='markAsComplete(index)'><Check /></div>
 				<input placeholder="task name" v-model="task.task">
 				<div class="button red-button" @click="deleteTask(index)"><Cross /></div>
 			</div>
@@ -29,9 +29,9 @@ import Subscription from './subscription/subscription.js'
 				Start
 				<input type='date' placeholder='start' v-model="task.startDate">
 				Hour
-				<input type="number" min="0" max="23" placeholder="HH" v-model="task.starHour" ref="startHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				<input type="number" min="0" max="23" placeholder="HH" v-model="task.startHour" ref="startHour" value="00" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 				Minute
-				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.minute" ref="startMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
+				<input type="number" min="0" max="60" placeholder="mm" value="00" v-model="task.startMinute" ref="startMinute" oninput="this.value=this.value.replace(/(?![0-9])./gmi,'')">
 			</div>
 			<div class='wrapper'>
 				End
@@ -83,6 +83,10 @@ export default{
 		add(type) {
 			this.formData.tasks.push({type: type});
 		},
+		markAsComplete(index) {
+			if(this.formData.tasks[index].complete) this.formData.tasks[index].complete = false;
+			else this.formData.tasks[index].complete = true;
+		},
 		deleteTask(index) {
 			this.formData.tasks.splice(index, 1);
 		},
@@ -105,26 +109,24 @@ export default{
 				if (!task.task || task.task.trim() === "") {
 					Subscription.notify("notification", "Task name is empty", "error");
 					return;
-				} else if (!task.date) {
+				} else if (!task.endDate) {
 					Subscription.notify("notification", "Deadline for the task has not been selected", "error");
 					return;
-				} else if (task.hour && (task.hour<=0 || task.hour>=24)) {
+				} else if (task.endHour && (task.endHour<0 || task.endHour>=24)) {
 					Subscription.notify("notification", "Incorrect hour format for task", "error");
 					return;
-				} else if (task.hour && (task.minutes <=0 || task.minute>=60)) {
+				} else if (task.endMinute && (task.endMinute<0 || task.endMinute>=60)) {
 					Subscription.notify("notification", "Incorrect minute format for task", "error");
 					return;
 				}
-				task.start = `${task.startDate}T${task.startHour?task.startHour:"00"}:${task.startMinute?task.startMinute:"00"}:00Z`;
+				task.end = `${task.endDate}T${task.endHour?task.endHour:"00"}:${task.endMinute?task.endMinute:"00"}:00Z`;
 				let today = new Date();
-				let deadlineDay = new Date(deadline);
+				let deadlineDay = new Date(task.start);
 				if (today > deadlineDay) {
 					Subscription.notify("notification", "Deadline cannot be before the current time", "error");
 					return;
 				}
-				if(task.type === 'schedule'){
-					task.end = `${task.endDate}T${task.endHour?task.endHour:"00"}:${task.endMinute?task.endMinute:"00"}:00Z`;
-				}
+				if(task.type === 'schedule') task.start = `${task.startDate}T${task.startHour?task.startHour:"00"}:${task.startMinute?task.startMinute:"00"}:00Z`;
 				delete task.startDate;
 				delete task.endDate;
 				delete task.startHour;
@@ -160,7 +162,6 @@ export default{
 		Axios.get(`${this.expressAddress}/${this.$route.params.id}`)
 			.then((response) => {
 				this.formData = response.data;
-				console.log(this.formData);
 				switch (this.formData.priority){
 					case 'Low Priority':
 					this.$refs.lowPriority.click();
@@ -186,6 +187,7 @@ export default{
 						task.startMinute = timeSplit[1];
 					}
 				}
+				console.log(this.formData);
 			})
 			.catch((response) => {
 				Subscription.notify("notification", "Oof, somehting went wrong!!!", "error");
@@ -220,16 +222,27 @@ svg{
 	flex-direction: row;
 	justify-content: space-between;
 }
+.task-list {
+	padding: .5em;
+	border-radius: 5px;
+}
 .task-list > .wrapper {
 	margin-bottom: 0.5em;
 }
-.task-list > .wrapper > input {
+.task-list input {
 	flex-grow: 1;
 	margin: 0em 1em 0em 1em;
+	background-color: transparent;
+}
+.task-list textarea {
+	background-color: transparent;
 }
 .task-list > .wrapper > .button {
 	width: 1.5em;
 	height: 1.5em;
+}
+.task-complete {
+	background-color: #e2ece9;
 }
 .priority .button {
 	flex-grow: 1;
