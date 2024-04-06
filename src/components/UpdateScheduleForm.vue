@@ -119,14 +119,14 @@ export default{
 					Subscription.notify("notification", "Incorrect minute format for task", "error");
 					return;
 				}
-				task.end = `${task.endDate}T${task.endHour?task.endHour:"00"}:${task.endMinute?task.endMinute:"00"}:00Z`;
+				task.end = `${task.endDate}T${task.endHour?task.endHour:"00"}:${task.endMinute?task.endMinute:"00"}:00`;
 				let today = new Date();
-				let deadlineDay = new Date(task.start);
+				let deadlineDay = new Date(task.end);
 				if (today > deadlineDay) {
 					Subscription.notify("notification", "Deadline cannot be before the current time", "error");
 					return;
 				}
-				if(task.type === 'schedule') task.start = `${task.startDate}T${task.startHour?task.startHour:"00"}:${task.startMinute?task.startMinute:"00"}:00Z`;
+				if(task.type === 'schedule') task.start = `${task.startDate}T${task.startHour?task.startHour:"00"}:${task.startMinute?task.startMinute:"00"}:00`;
 				delete task.startDate;
 				delete task.endDate;
 				delete task.startHour;
@@ -140,7 +140,8 @@ export default{
 					return false;
 				}
 			}
-			Axios.put(`${this.expressAddress}/${this.$route.params.id}`, this.formData)
+			console.log(this.formData);
+			Axios.put(`${this.expressAddress}/update-schedule/${this.$route.params.id}`, this.formData)
 				.then((response) => {
 					Subscription.notify('notification', response.data, 'success');
 					this.$router.push('/');
@@ -149,7 +150,7 @@ export default{
 				});
 		},
 		deleteAction() {
-			Axios.delete(`${this.expressAddress}/${this.$route.params.id}`)
+			Axios.delete(`${this.expressAddress}/delete-schedule/${this.$route.params.id}`)
 				.then((response) => {
 					Subscription.notify('notification', response.data, 'success');
 					this.$router.push('/');
@@ -159,7 +160,7 @@ export default{
 		}
 	},
 	mounted() {
-		Axios.get(`${this.expressAddress}/${this.$route.params.id}`)
+		Axios.get(`${this.expressAddress}/get-schedule/${this.$route.params.id}`)
 			.then((response) => {
 				this.formData = response.data;
 				switch (this.formData.priority){
@@ -187,7 +188,6 @@ export default{
 						task.startMinute = timeSplit[1];
 					}
 				}
-				console.log(this.formData);
 			})
 			.catch((response) => {
 				Subscription.notify("notification", "Oof, somehting went wrong!!!", "error");

@@ -11,11 +11,12 @@ app.use(cors());
 app.use(express.json());
 
 // routes
-app.get('/', getSchedules);
 app.post('/create', createSchedule);
-app.get('/:id', getSchedule);
-app.delete('/:id', deleteSchedule);
-app.put('/:id', updateSchedule);
+app.get('/get-schedule/:id', getSchedule);
+app.get('/get-schedules', getSchedules);
+app.delete('/delete-schedule/:id', deleteSchedule);
+app.put('/update-schedule/:id', updateSchedule);
+app.get('/get-calendar', getCalendar);
 app.get('*', (req, res) => res.status(404));
 
 // start listening
@@ -28,6 +29,11 @@ async function getSchedules (request, response) {
 async function getSchedule (request, response) {
 	let responseData = await MongooseFunctions.getScheduleById(request.params.id);
 	response.status(200).send(responseData);
+}
+
+async function getCalendar (request, response) {
+	MongooseFunctions.getTaskByDate();
+	response.status(200);
 }
 
 function createSchedule (request, response){

@@ -85,6 +85,7 @@ export default{
 	methods: {
 		add(type) {
 			this.formData.tasks.push({type: type});
+			console.log(this.formData.tasks)
 		},
 		deleteTask(index) {
 			this.formData.tasks.splice(index, 1);

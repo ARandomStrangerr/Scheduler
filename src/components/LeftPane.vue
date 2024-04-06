@@ -28,7 +28,7 @@ export default {
 		}
 	},
 	mounted() {
-		Axios.get(`${this.expressAddress}/`)
+		Axios.get(`${this.expressAddress}/get-schedules`)
 			.then((response) => {
 				this.schedules = response.data;
 			})

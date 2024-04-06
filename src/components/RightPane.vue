@@ -19,6 +19,8 @@
 
 <script>
 import Subscription from './subscription/subscription.js';
+import Axios from 'axios';
+
 let createDate = function(month, year) {
 	let rows = [];
 	let lastDayPrevMonth = new Date(year, month - 1, 0);
@@ -48,6 +50,7 @@ let createDate = function(month, year) {
 	return rows;
 }
 export default {
+	inject: ['expressAddress'],
 	data(){
 		return {
 			dates: []
@@ -56,6 +59,8 @@ export default {
 	mounted() {
 		let today = new Date();
 		this.dates = createDate(today.getMonth()+1, today.getFullYear());
+
+		Axios.get(`${this.expressAddress}/get-calendar`)
 
 		Subscription.subscribe("net-month", (args) => {
 			for (let row of rows) row.remove();
@@ -67,7 +72,7 @@ export default {
 			for (let row of rows) row.remove();
 			rows = createCalendar(args[1].getMonth()+1, args[1].getFullYear());
 			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
-		})
+		});
 	}
 }
 </script>
