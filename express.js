@@ -17,7 +17,7 @@ app.get('/get-schedules', getSchedules);
 app.delete('/delete-schedule/:id', deleteSchedule);
 app.put('/update-schedule/:id', updateSchedule);
 app.get('/get-calendar', getCalendar);
-app.get('*', (req, res) => res.status(404));
+app.get('*', (req, res) => res.status(404).send("The requested path does not exists"));
 
 // start listening
 app.listen(PORT, listenFcn)
@@ -32,8 +32,13 @@ async function getSchedule (request, response) {
 }
 
 async function getCalendar (request, response) {
-	MongooseFunctions.getTaskByDate();
-	response.status(200);
+	const startDate = new Date(request.query.start);
+	const endDate = new Date(request.query.end);
+	try{
+		response.status(200).send(await MongooseFunctions.getTaskByDate(startDate, endDate));
+	} catch {
+		response.status(400).send("error");
+	}
 }
 
 function createSchedule (request, response){

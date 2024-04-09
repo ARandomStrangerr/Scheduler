@@ -12,6 +12,7 @@
 		<div v-for="(row, i) of dates" :key='i' class='row'>
 			<div v-for="(cell, j) of row" :key='j' class='cell'>
 				<div class='button'>{{cell.date}}</div>
+				<div class="class " v-for="(task,k) of cell.tasks" :key="k">{{task.task}}</div>
 			</div>
 		</div>
 	</div>
@@ -21,34 +22,6 @@
 import Subscription from './subscription/subscription.js';
 import Axios from 'axios';
 
-let createDate = function(month, year) {
-	let rows = [];
-	let lastDayPrevMonth = new Date(year, month - 1, 0);
-	let firstDayThisMonth = new Date(year, month - 1, 1);
-	let lastDayThisMonth = new Date (year, month, 0);
-	let row = [];
-	for (let date = lastDayPrevMonth.getDate() - firstDayThisMonth.getDay() + 1; date <= lastDayPrevMonth.getDate(); date++){
-		row.push({
-			date: date
-		});
-	}
-	for (let date = 1; date <= lastDayThisMonth.getDate(); date++){
-		row.push({
-			date: date
-		});
-		if (row.length===7){
-			rows.push(row);
-			row=[];
-		}
-	}
-	for (let date = 1; row.length < 7; date++) {
-		row.push({
-			date: date
-		});
-		if (row.length===7) rows.push(row);
-	}
-	return rows;
-}
 export default {
 	inject: ['expressAddress'],
 	data(){
@@ -56,23 +29,53 @@ export default {
 			dates: []
 		}
 	},
+	methods: {
+		async createDateList (month, year) {
+			let rows = [];
+			let lastDayPrevMonth = new Date(year, month - 1, 0);
+			let firstDayThisMonth = new Date(year, month - 1, 1);
+			let lastDayThisMonth = new Date (year, month, 0);
+			let row = [];
+			for (let date = lastDayPrevMonth.getDate() - firstDayThisMonth.getDay() + 1; date <= lastDayPrevMonth.getDate(); date++){
+				row.push({
+					date: date,
+					tasks: []
+				});
+			}
+			for (let date = 1; date <= lastDayThisMonth.getDate(); date++){
+				row.push({
+					date: date,
+					tasks: []
+				});
+				if (row.length===7){
+					rows.push(row);
+					row=[];
+				}
+			}
+			for (let date = 1; row.length < 7; date++) {
+				row.push({
+					date: date,
+					tasks: []
+				});
+				if (row.length===7) rows.push(row);
+			}
+			let response = await Axios.get(`${this.expressAddress}/get-calendar`, {
+				params: {
+					start: new Date(year, month - 1, 1 - (firstDayThisMonth.getDay())),
+					end: new Date(year, month - 1, lastDayThisMonth.getDate() + 7 - (lastDayThisMonth.getDate() + firstDayThisMonth.getDay()) % 7)
+				}
+			});
+			for (let task of response.data){
+				let end = new Date(task.end);
+				let columnIndex = (end.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (end.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
+				let rowIndex = columnIndex != 6 ? Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
+				rows[rowIndex][columnIndex].tasks.push(task);
+			}
+			this.dates = rows;
+		}
+	},
 	mounted() {
-		let today = new Date();
-		this.dates = createDate(today.getMonth()+1, today.getFullYear());
-
-		Axios.get(`${this.expressAddress}/get-calendar`)
-
-		Subscription.subscribe("net-month", (args) => {
-			for (let row of rows) row.remove();
-			rows = createCalendar(args[1].getMonth()+1, args[1].getFullYear());
-			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
-		});
-
-		Subscription.subscribe("prev-month", (args) => {
-			for (let row of rows) row.remove();
-			rows = createCalendar(args[1].getMonth()+1, args[1].getFullYear());
-			for(let row of rows) this.$refs.calendarContainer.appendChild(row);
-		});
+		this.createDateList(4,2024);
 	}
 }
 </script>
@@ -115,7 +118,8 @@ export default {
 	padding-top: 0.5em;
 	width: calc(100%/7);
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
+	align-items: center;
 	border-right:1px;
 	border-top:0px;
 	border-left:0px;
@@ -124,7 +128,7 @@ export default {
 	border-color: #dee2e6;
 	box-sizing: border-box;
 }
-.cell > div {
+.cell > div:first-child {
 	width: 1.8em;
 	height: 1.8em;
 	border-radius: 50%;

@@ -89,9 +89,8 @@ async function updateScheduleById(id, title, priority, tasks){
 	scheduleModel.findByIdAndUpdate(id, newSchedule, {new:true}).exec();
 }
 
-async function getTaskByDate(){
-	const startDate = new Date('2024-04-01'); // Replace with your desired starting date
-	const endDate = new Date('2024-05-31');   // Replace with your desired ending date
+async function getTaskByDate(startDate, endDate){
+	return await taskModel.find({end:{$gte:startDate, $lte:endDate}});
 }
 
 export {createSchedule, getSchedule, getScheduleById, getTaskByDate, deleteSchedule, updateScheduleById, connect};
