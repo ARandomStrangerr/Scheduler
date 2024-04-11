@@ -70,7 +70,7 @@ let getTaskContainer = function() {
 	wrapper.classList.add("wrapper");
 	deleteButton.onClick = () => wrapper.remove();
 }
-export default{
+export default {
 	inject: ['expressAddress'],
 	data() {
 		return {

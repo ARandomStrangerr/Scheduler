@@ -1,4 +1,5 @@
 <script setup>
+import {ref} from 'vue'
 import {RouterLink, RouterView} from 'vue-router';
 import Axios from 'axios'
 import Subscription from './subscription/subscription.js'
@@ -7,7 +8,7 @@ import Subscription from './subscription/subscription.js'
 <template>
 	<div class='left-pane'>
 		<div class='button' @click="$router.push('/create')">Add Schedule</div>
-		<div v-for='(schedule, index) of schedules' :key='schedule.id' :class="{'schedule':true, 'low-priority':schedule.priority==='Low Priority', 'mediun-priority':schedule.priority==='Medium Priority', 'high-priority':schedule.priority==='High Priority'}" @click="redirectToUpdatePage(index)">
+		<div v-for='(schedule, index) of schedules' :key='schedule.id' :class="{'schedule':true, 'low-priority':schedule.priority==='Low Priority', 'mediun-priority':schedule.priority==='Medium Priority', 'high-priority':schedule.priority==='High Priority', 'active':schedule.active}" @click="redirectToUpdatePage(schedule)" @mouseover="mouseOver(schedule)" @mouseout="mouseOut(schedule)">
 			{{schedule.title}}
 		</div>
 	</div>
@@ -23,14 +24,29 @@ export default {
 		}
 	},
 	methods: {
-		redirectToUpdatePage(index) {
-			this.$router.push(`/update/${this.schedules[index]._id}`);
+		redirectToUpdatePage(schedule) {
+			this.$router.push(`/update/${schedule._id}`);
+		},
+		mouseOver(schedule) {
+			Subscription.notify(`${schedule._id}MouseOver`);
+		},
+		mouseOut(schedule) {
+			Subscription.notify(`${schedule._id}MouseOut`);
 		}
 	},
 	mounted() {
 		Axios.get(`${this.expressAddress}/get-schedules`)
 			.then((response) => {
 				this.schedules = response.data;
+				for (let schedule of response.data) {
+					schedule.active = ref(false);
+					Subscription.subscribe(`${schedule._id}MouseOver`,() => {
+						schedule.active.value = true;
+					});
+					Subscription.subscribe(`${schedule._id}MouseOut`,() => {
+						schedule.active.value = false;
+					});
+				}
 			})
 			.catch((response) => {
 				console.log(response);
@@ -70,10 +86,19 @@ export default {
 .low-priority {
 	background-color: #dfe7fd;
 }
+.low-priority.active {
+	background-color: #cddafd;
+}
 .medium-priority {
+	background-color: #e2ece9;
+}
+.medium-priority.active {
 	background-color: #e2ece9;
 }
 .high-priority {
 	background-color: #fde2e4;
+}
+.high-priority.active {
+	background-color: #fad2e1;
 }
 </style>

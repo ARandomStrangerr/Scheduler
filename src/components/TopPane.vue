@@ -42,12 +42,12 @@ export default {
 		getNextMonth() {
 			currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 1);
 			this.$refs.monthAndYear.innerText = monthName(currentDate.getMonth()) + " " + currentDate.getFullYear();
-			Subscription.notify("next-month", currentDate);
+			Subscription.notify("viewNextMonth");
 		},
 		getPrevMonth() {
 			currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth()-1, 1);
 			this.$refs.monthAndYear.innerText = monthName(currentDate.getMonth()) + " " + currentDate.getFullYear();
-			Subscription.notify("prev-month", currentDate);
+			Subscription.notify("viewLastMonth");
 		}
 	}
 }

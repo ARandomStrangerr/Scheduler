@@ -16,7 +16,7 @@ export default {
 	notify (subscriptionName){
 		if (!map.has(subscriptionName)) throw new Error("subscription " + subscriptionName + " DNE");
 		for (let functionToCall of map.get(subscriptionName)) {
-			setTimeout(() => functionToCall(arguments), 0);
+			functionToCall(arguments);
 		}
 	}
 }

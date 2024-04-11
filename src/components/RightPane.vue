@@ -12,7 +12,7 @@
 		<div v-for="(row, i) of dates" :key='i' class='row'>
 			<div v-for="(cell, j) of row" :key='j' class='cell'>
 				<div class='button'>{{cell.date}}</div>
-				<div class="class " v-for="(task,k) of cell.tasks" :key="k">{{task.task}}</div>
+				<div v-for="(task,k) of cell.tasks" :key="k" :class="{'low-priority':task.parent.priority==='Low Priority', 'mediun-priority':task.parent.priority==='Medium Priority', 'high-priority':task.parent.priority==='High Priority', 'active':task.active}" @mouseover="onMouseOver(task)" @mouseout="onMouseOut(task)" @click="redirectToUpdatePage(task)">{{`${task.parent.title}: ${task.task}`}}</div>
 			</div>
 		</div>
 	</div>
@@ -21,11 +21,12 @@
 <script>
 import Subscription from './subscription/subscription.js';
 import Axios from 'axios';
-
+import { ref } from 'vue';
 export default {
 	inject: ['expressAddress'],
 	data(){
 		return {
+            viewMonthYear: new Date(),
 			dates: []
 		}
 	},
@@ -70,17 +71,41 @@ export default {
 				let columnIndex = (end.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (end.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
 				let rowIndex = columnIndex != 6 ? Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
 				rows[rowIndex][columnIndex].tasks.push(task);
+                task.active = ref(false);
+                Subscription.subscribe(`${task.parent._id}MouseOver`, () => { // memory leak here, we need to unsub this when it does not need
+                    task.active.value = true;
+                });
+                Subscription.subscribe(`${task.parent._id}MouseOut`, () => { // memory leak here, we need to unsub this when it does not need
+                    task.active.value = false;
+                });
 			}
-			this.dates = rows;
+            this.dates = rows;
+		},
+		onMouseOver(task){
+			Subscription.notify(`${task.parent._id}MouseOver`);
+		},
+		onMouseOut(task){
+			Subscription.notify(`${task.parent._id}MouseOut`);
+		},
+		redirectToUpdatePage(task){
+			this.$router.push(`/update/${task.parent._id}`);
 		}
 	},
-	mounted() {
-		this.createDateList(4,2024);
+	async mounted() {
+		await this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
+        Subscription.subscribe("viewNextMonth", () => {
+            this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() + 1);
+            this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
+        });
+        Subscription.subscribe("viewLastMonth", () => {
+            this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() - 1);
+            this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
+        });
 	}
 }
 </script>
 
-<style>
+<style scoped>
 .right-pane {
 	width: 85%;
 	background-color: white;
@@ -88,7 +113,6 @@ export default {
 	flex-direction: column;
 	flex-grow:1;
 }
-
 .row {
 	display: flex;
 	flex-direction: row;
@@ -99,21 +123,17 @@ export default {
 	border-color: #dee2e6;
 	box-sizing: border-box;
 }
-
 .row:last-child {
 	border-width: 0px;
 }
-
 .row.cell:last-child {
 	border-width: 0px;
 }
-
 .day {
 	height: 2em;
 	border-bottom:0px;
 	flex-grow:0;
 }
-
 .cell {
 	padding-top: 0.5em;
 	width: calc(100%/7);
@@ -136,17 +156,37 @@ export default {
 	justify-content: center;
 	align-items: center;
 }
-.cell > div:hover {
+.cell > div {
+	width: 100%;
+	transition: 0.2s;
+}
+.cell > div:first-child:hover {
 	background-color: #edf6f9;
+}
+.low-priority {
+	background-color: #dfe7fd;
+}
+.low-priority.active {
+	background-color: #cddafd;
+}
+.medium-priority {
+	background-color: #bee1e6;
+}
+.medium-priority.active {
+	background-color: #e2ece9;
+}
+.high-priority {
+	background-color: #fde2e4;
+}
+.high-priority.active {
+	background-color: #fad2e1;
 }
 .today > div {
 	background-color: #fbecc1;
 }
-
 .not-in-month{
 	color: #ced4da;
 }
-
 .cell:nth-last-child() {
 	border-width: 0px;
 }
