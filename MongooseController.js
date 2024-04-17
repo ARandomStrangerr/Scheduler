@@ -82,12 +82,12 @@ async function updateScheduleById(id, title, priority, tasks){
 			taskList.push(task._id);
 		} else {
 			let temp = new taskModel(task);
-			temp.parent = id
+			temp.parent = id;
 			temp.save();
 			taskList.push(temp._id);
 		}
 	}
-
+	newSchedule.tasks = taskList;
 	scheduleModel.findByIdAndUpdate(id, newSchedule, {new:true}).exec();
 }
 

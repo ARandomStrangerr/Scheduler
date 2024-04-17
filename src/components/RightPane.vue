@@ -11,8 +11,8 @@
 		</div>
 		<div v-for="(row, i) of dates" :key='i' class='row'>
 			<div v-for="(cell, j) of row" :key='j' class='cell'>
-				<div class='button'>{{cell.date}}</div>
-				<div v-for="(task,k) of cell.tasks" :key="k" :class="{'low-priority':task.parent.priority==='Low Priority', 'mediun-priority':task.parent.priority==='Medium Priority', 'high-priority':task.parent.priority==='High Priority', 'active':task.active}" @mouseover="onMouseOver(task)" @mouseout="onMouseOut(task)" @click="redirectToUpdatePage(task)">{{`${task.parent.title}: ${task.task}`}}</div>
+				<div :class="{'button': true, 'today':cell.today, 'not-in-month':cell.notInMonth}">{{cell.date}}</div>
+				<div v-for="(task,k) of cell.tasks" :key="k" :class="{ 'low-priority':task.parent.priority==='Low Priority', 'medium-priority':task.parent.priority==='Medium Priority', 'high-priority':task.parent.priority==='High Priority', 'active':task.active}" @mouseover="onMouseOver(task)" @mouseout="onMouseOut(task)" @click="redirectToUpdatePage(task)">{{task.task}}</div>
 			</div>
 		</div>
 	</div>
@@ -26,7 +26,8 @@ export default {
 	inject: ['expressAddress'],
 	data(){
 		return {
-            viewMonthYear: new Date(),
+			today: new Date(),
+			viewMonthYear: new Date(),
 			dates: []
 		}
 	},
@@ -40,7 +41,8 @@ export default {
 			for (let date = lastDayPrevMonth.getDate() - firstDayThisMonth.getDay() + 1; date <= lastDayPrevMonth.getDate(); date++){
 				row.push({
 					date: date,
-					tasks: []
+					tasks: [],
+					notInMonth: true
 				});
 			}
 			for (let date = 1; date <= lastDayThisMonth.getDate(); date++){
@@ -56,7 +58,8 @@ export default {
 			for (let date = 1; row.length < 7; date++) {
 				row.push({
 					date: date,
-					tasks: []
+					tasks: [],
+					notInMonth: true,
 				});
 				if (row.length===7) rows.push(row);
 			}
@@ -66,20 +69,23 @@ export default {
 					end: new Date(year, month - 1, lastDayThisMonth.getDate() + 7 - (lastDayThisMonth.getDate() + firstDayThisMonth.getDay()) % 7)
 				}
 			});
-			for (let task of response.data){
+			for (let task of response.data) {
 				let end = new Date(task.end);
 				let columnIndex = (end.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (end.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
 				let rowIndex = columnIndex != 6 ? Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
 				rows[rowIndex][columnIndex].tasks.push(task);
-                task.active = ref(false);
-                Subscription.subscribe(`${task.parent._id}MouseOver`, () => { // memory leak here, we need to unsub this when it does not need
-                    task.active.value = true;
-                });
-                Subscription.subscribe(`${task.parent._id}MouseOut`, () => { // memory leak here, we need to unsub this when it does not need
-                    task.active.value = false;
-                });
+				task.active = ref(false);
+				Subscription.subscribe(`${task.parent._id}MouseOver`, () => { // memory leak here, we need to unsub this when it does not need
+					task.active.value = true;
+				});
+				Subscription.subscribe(`${task.parent._id}MouseOut`, () => { // memory leak here, we need to unsub this when it does not need
+					task.active.value = false;
+				});
 			}
-            this.dates = rows;
+			let colIndex = (this.today.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (this.today.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
+			let rowIndex = colIndex != 6 ? Math.floor((this.today.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((this.today.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
+			rows[rowIndex][colIndex].today = true;
+			this.dates = rows;
 		},
 		onMouseOver(task){
 			Subscription.notify(`${task.parent._id}MouseOver`);
@@ -93,14 +99,14 @@ export default {
 	},
 	async mounted() {
 		await this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
-        Subscription.subscribe("viewNextMonth", () => {
-            this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() + 1);
-            this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
-        });
-        Subscription.subscribe("viewLastMonth", () => {
-            this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() - 1);
-            this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
-        });
+			Subscription.subscribe("viewNextMonth", () => {
+			this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() + 1);
+			this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
+		});
+		Subscription.subscribe("viewLastMonth", () => {
+			this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() - 1);
+			this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
+		});
 	}
 }
 </script>
@@ -117,6 +123,7 @@ export default {
 	display: flex;
 	flex-direction: row;
 	flex-grow:1;
+	flex-basis: 0;
 	width: 100%;
 	border-width: 0px 0px 1px 0px;
 	border-style:solid;
@@ -134,7 +141,14 @@ export default {
 	border-bottom:0px;
 	flex-grow:0;
 }
+.today {
+	background-color: #fbecc1;
+}
+.not-in-month{
+	color: #ced4da;
+}
 .cell {
+	flex-grow: 0;
 	padding-top: 0.5em;
 	width: calc(100%/7);
 	display: flex;
@@ -152,16 +166,23 @@ export default {
 	width: 1.8em;
 	height: 1.8em;
 	border-radius: 50%;
+	margin-bottom: 0.5em;
 	display:flex;
 	justify-content: center;
 	align-items: center;
+	margin-right: 0em;
 }
 .cell > div {
-	width: 100%;
+	width: 90%;
+	border-radius: 0px 5px 5px 0px;
 	transition: 0.2s;
+	margin-right: 1em;
 }
 .cell > div:first-child:hover {
 	background-color: #edf6f9;
+}
+.cell:nth-last-child() {
+	border-width: 0px;
 }
 .low-priority {
 	background-color: #dfe7fd;
@@ -170,24 +191,15 @@ export default {
 	background-color: #cddafd;
 }
 .medium-priority {
-	background-color: #bee1e6;
+	background-color: #e2ece9;
 }
 .medium-priority.active {
-	background-color: #e2ece9;
+	background-color: #bee1e6;
 }
 .high-priority {
 	background-color: #fde2e4;
 }
 .high-priority.active {
 	background-color: #fad2e1;
-}
-.today > div {
-	background-color: #fbecc1;
-}
-.not-in-month{
-	color: #ced4da;
-}
-.cell:nth-last-child() {
-	border-width: 0px;
 }
 </style>

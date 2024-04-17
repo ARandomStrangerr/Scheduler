@@ -8,7 +8,7 @@ import Subscription from './subscription/subscription.js'
 <template>
 	<div class='left-pane'>
 		<div class='button' @click="$router.push('/create')">Add Schedule</div>
-		<div v-for='(schedule, index) of schedules' :key='schedule.id' :class="{'schedule':true, 'low-priority':schedule.priority==='Low Priority', 'mediun-priority':schedule.priority==='Medium Priority', 'high-priority':schedule.priority==='High Priority', 'active':schedule.active}" @click="redirectToUpdatePage(schedule)" @mouseover="mouseOver(schedule)" @mouseout="mouseOut(schedule)">
+		<div v-for='(schedule, index) of schedules' :key='schedule.id' :class="{'schedule':true, 'low-priority':schedule.priority==='Low Priority', 'medium-priority':schedule.priority==='Medium Priority', 'high-priority':schedule.priority==='High Priority', 'active':schedule.active}" @click="redirectToUpdatePage(schedule)" @mouseover="mouseOver(schedule)" @mouseout="mouseOut(schedule)">
 			{{schedule.title}}
 		</div>
 	</div>
@@ -76,12 +76,20 @@ export default {
 	display:inline-block;
 	text-align:center;
 }
-
 .schedule {
 	margin-top:1em;
 	border-radius: 5px;
 	padding:0.5em;
+	max-height: 2.4em;
+	transition: 0.4s;
 	cursor: pointer;
+	/* white-space: nowrap; */
+  	overflow: hidden;
+   	text-overflow: ellipsis;
+}
+.schedule:hover {
+	/* white-space: normal; */
+	max-height: 100em;
 }
 .low-priority {
 	background-color: #dfe7fd;
@@ -93,7 +101,7 @@ export default {
 	background-color: #e2ece9;
 }
 .medium-priority.active {
-	background-color: #e2ece9;
+	background-color: #bee1e6;
 }
 .high-priority {
 	background-color: #fde2e4;
