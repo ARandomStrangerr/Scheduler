@@ -28,7 +28,8 @@ export default {
 		return {
 			today: new Date(),
 			viewMonthYear: new Date(),
-			dates: []
+			dates: [],
+			unsubList: []
 		}
 	},
 	methods: {
@@ -63,24 +64,28 @@ export default {
 				});
 				if (row.length===7) rows.push(row);
 			}
+			// fetch for event within this month to display
 			let response = await Axios.get(`${this.expressAddress}/get-calendar`, {
 				params: {
 					start: new Date(year, month - 1, 1 - (firstDayThisMonth.getDay())),
 					end: new Date(year, month - 1, lastDayThisMonth.getDate() + 7 - (lastDayThisMonth.getDate() + firstDayThisMonth.getDay()) % 7)
 				}
 			});
+			// display the fetched data
 			for (let task of response.data) {
 				let end = new Date(task.end);
 				let columnIndex = (end.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (end.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
 				let rowIndex = columnIndex != 6 ? Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
 				rows[rowIndex][columnIndex].tasks.push(task);
 				task.active = ref(false);
-				Subscription.subscribe(`${task.parent._id}MouseOver`, () => { // memory leak here, we need to unsub this when it does not need
+				let mouseOverId = Subscription.subscribe(`${task.parent._id}MouseOver`, () => { // memory leak here, we need to unsub this when it is not needed
 					task.active.value = true;
 				});
-				Subscription.subscribe(`${task.parent._id}MouseOut`, () => { // memory leak here, we need to unsub this when it does not need
+				let mouseOutId = Subscription.subscribe(`${task.parent._id}MouseOut`, () => { // memory leak here, we need to unsub this when it is not needed
 					task.active.value = false;
 				});
+                this.unsubList.push([`${task.parent._id}MouseOver`, mouseOverId]);
+                this.unsubList.push([`${task.parent._id}MouseOut`, mouseOutId]);
 			}
 			let colIndex = (this.today.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (this.today.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
 			let rowIndex = colIndex != 6 ? Math.floor((this.today.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((this.today.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
@@ -99,13 +104,21 @@ export default {
 	},
 	async mounted() {
 		await this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
-			Subscription.subscribe("viewNextMonth", () => {
+		Subscription.subscribe("viewNextMonth", () => {
 			this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() + 1);
 			this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
+			while (this.unsubList.length != 0){
+                let deleteElement = this.unsubList.pop();
+                Subscription.unsubscribe(deleteElement[0], deleteElement[1]);
+			}
 		});
 		Subscription.subscribe("viewLastMonth", () => {
 			this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() - 1);
 			this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
+            while (this.unsubList.length != 0) {
+                let deleteElement = this.unsubList.pop();
+                Subscription.unsubscribe(deleteElement[0], deleteElement[1]);
+            }
 		});
 	}
 }
