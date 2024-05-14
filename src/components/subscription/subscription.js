@@ -14,7 +14,6 @@ function subscribe (subscriptionName, functionToCall) {
 		subscriptionMap.set(subscriptionName, functionCallMap);
 		nextIdentifierMap.set(subscriptionName, 1);
 	}
-	console.log(subscriptionName, id);
 	return id;
 }
 function unsubscribe(subscriptionName, identifier){

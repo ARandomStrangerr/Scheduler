@@ -1,6 +1,5 @@
 import Mongoose from 'mongoose';
 
-// todo: improve on this design, the collection should be split into 2 collections for faster retreaval time of schedules and tasks
 const scheduleShematic = new Mongoose.Schema({
 	title: {type: String, required: true},
 	priority: {type: String, enum:['Low Priority', 'Medium Priority', 'High Priority'], require: true},
@@ -26,8 +25,19 @@ const taskSchema = new Mongoose.Schema({
 	note: {type: String, require: false},
 	complete: {type: Boolean, require: true, default: false}
 });
+const newTaskSchema = new Mongoose.Schema({
+	parent: {type: Mongoose.Types.ObjectId, ref: 'Schedule'}, // refer to the id of the schedule schema
+	type: {type: String, require: true, enum: ['schedule', 'deadline']}, // task type
+	taskName: {type: String, require: true}, // name of the task
+	startTime: {type : Date, require: false}, // start time of the first occurance of the task
+	endTime: {type: Date, require: false}, // end time of the first occurance of the task
+	lastOccurance: {type: Date, require: true}, // date of the last occurance of the task
+	repeatPatterm: {type: String, require: false}, // pattern to repeat
+	complete: {type: Boolean, require: true, default: false} // mark that the task is completed or not
+});
 const scheduleModel = Mongoose.model('Schedule', scheduleShematic);
 const taskModel = Mongoose.model('Task', taskSchema);
+const newTaskModel = Mongoose.model('NewTask', newTaskSchema);
 
 function connect(hostName, port, database){
 	Mongoose.connect(`mongodb://${hostName}:${port}/${database}`);
