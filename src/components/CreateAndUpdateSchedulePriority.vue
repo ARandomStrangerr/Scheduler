@@ -1,8 +1,8 @@
 <template>
 	<div class='wrapper'>
-		<div @click="toggle($event)" class='button low-priority'>Low Priority</div>
-		<div @click="toggle($event)" class='button medium-priority'>Medium Priority</div>
-		<div @click="toggle($event)" class='button high-priority'>High Priority</div>
+		<div :class='{"button":true, "low-priority": true, "active":submitData.priority==="Low Priority"}' @click="submitData.priority='Low Priority'">Low Priority</div>
+		<div :class='{"button":true, "medium-priority": true, "active":submitData.priority==="Medium Priority"}' @click="submitData.priority='Medium Priority'">Medium Priority</div>
+		<div :class='{"button":true, "high-priority": true, "active":submitData.priority==="High Priority"}' @click="submitData.priority='High Priority'">High Priority</div>
 	</div>
 </template>
 
@@ -14,18 +14,17 @@ export default{
 			selectedPriority: ""
 		}
 	},
-	methods: {
-		toggle(target) {
-			if (this.selectedPriority) this.selectedPriority.classList.toggle('active');
-			target.target.classList.toggle('active');
-			this.selectedPriority = target.target;
-			this.submitData.priority = target.target.innerText;
-		}
-	},
 	mounted() {
-		if (this.submitData.priority==="Low Priority") document.querySelector(".button.low-priority").click();
-		else if (this.submitData.priority==="Medium Priority") document.querySelector(".button.medium-priority").click();
-		else if (this.submitData.priority==="High Priority") document.querySelector(".button.high-priority").click();
+		if (this.submitData.priority==="Low Priority"){
+			document.querySelector(".button.low-priority").click();
+			this.selectedPriority = document.querySelector(".button.low-priority");
+		} else if (this.submitData.priority==="Medium Priority"){
+			document.querySelector(".button.medium-priority").click();
+			this.selectedPriority = document.querySelector(".button.medium-priority");
+		} else if (this.submitData.priority==="High Priority"){
+			document.querySelector(".button.high-priority").click();
+			this.selectedPriority = document.querySelector(".button.high-priority");
+		}
 	}
 }
 </script>

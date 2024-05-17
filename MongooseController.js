@@ -1,7 +1,7 @@
 import Mongoose from 'mongoose';
 
 const scheduleShematic = new Mongoose.Schema({
-	title: {type: String, required: true},
+	scheduleName: {type: String, required: true},
 	priority: {type: String, enum:['Low Priority', 'Medium Priority', 'High Priority'], require: true},
 	tasks:{
 		type: [{type: Mongoose.Types.ObjectId, ref: 'Task'}],
@@ -17,92 +17,81 @@ when a schema is updated, its id does not change
 so pretty much, schema id never changes.
 */
 const taskSchema = new Mongoose.Schema({
-	parent: {type: Mongoose.Types.ObjectId, ref: 'Schedule'},
-	type: {type: String, requre: true, enum: ['schedule', 'deadline']},
-	task: {type: String, require: true},
-	start: {type: Date, require: false},
-	end: {type: Date, require: true},
-	note: {type: String, require: false},
-	complete: {type: Boolean, require: true, default: false}
-});
-const newTaskSchema = new Mongoose.Schema({
 	parent: {type: Mongoose.Types.ObjectId, ref: 'Schedule'}, // refer to the id of the schedule schema
 	type: {type: String, require: true, enum: ['schedule', 'deadline']}, // task type
 	taskName: {type: String, require: true}, // name of the task
-	startTime: {type : Date, require: false}, // start time of the first occurance of the task
-	endTime: {type: Date, require: false}, // end time of the first occurance of the task
-	lastOccurance: {type: Date, require: true}, // date of the last occurance of the task
-	repeatPatterm: {type: String, require: false}, // pattern to repeat
+	startTimeFirstOccurence: {type : Date, require: false}, // start time of the first occurance of the task
+	endTimeFirstOccurence: {type: Date, require: false}, // end time of the first occurance of the task
+	lastOccurence: {type: Date, require: true}, // date of the last occurance of the task
+	repeatPattern: {type: [{type: Number}], require: false}, // pattern to repeat
+	note: {type:String, require: false}, // note for the task
 	complete: {type: Boolean, require: true, default: false} // mark that the task is completed or not
 });
 const scheduleModel = Mongoose.model('Schedule', scheduleShematic);
 const taskModel = Mongoose.model('Task', taskSchema);
-const newTaskModel = Mongoose.model('NewTask', newTaskSchema);
 
+/* connect to the mongodb */
 function connect(hostName, port, database){
 	Mongoose.connect(`mongodb://${hostName}:${port}/${database}`);
 }
 
-async function createSchedule(title, priority, tasks) {
+/* create a new schedule */
+async function createSchedule(schedule) {
 	let newSchedule = new scheduleModel({
-		title: title,
-		priority: priority
+		scheduleName: schedule.scheduleName,
+		priority: schedule.priority,
+		tasks: []
 	});
-	let taskList = [];
-	for (let task of tasks) {
-		let savedTask = new taskModel({
-			parent: newSchedule._id,
-			type: task.type,
-			task: task.task,
-			start: task.start,
-			end: task.end,
-			note: task.note,
-			complete: task.complete
-		});
-		await savedTask.save();
-		taskList.push(savedTask._id);
+	for (let task of schedule.tasks){
+		let newTask = new taskModel(task);
+		newTask.parent = newSchedule._id;
+		if(!task.lastOccurence) newTask.lastOccurence = schedule.endTimeFirstOccurance;
+		newSchedule.tasks.push(newTask._id);
+		newTask.save();
 	}
-	newSchedule.tasks = taskList;
-	await newSchedule.save();
+	newSchedule.save();
 }
 
-async function getSchedule() {
-	return await scheduleModel.find().select('_id title priority');
+/* get list of schedules to display on the left */
+async function getSchedules() {
+	return await scheduleModel.find().select('_id scheduleName priority');
 }
 
+/* get a specific schedule with all its details based on the id */
 async function getScheduleById(id){
 	return await scheduleModel.findById(id).populate('tasks');
 }
 
+/* delete a specific schedule based on the given id */
 async function deleteSchedule(id){
 	let deleteItem = await scheduleModel.findById(id)
 	for (let taskId of deleteItem.tasks) taskModel.findByIdAndDelete(taskId).exec();
 	scheduleModel.findByIdAndDelete(id).exec();
 }
 
-async function updateScheduleById(id, title, priority, tasks){
-	let newSchedule = {
-		title: title,
-		priority: priority
-	};
-	let taskList = [];
-	for (let task of tasks) {
+/* update a specific schedule with all its tasks */
+async function updateScheduleById(schedule){
+	let updateSchedule = new scheduleModel({
+		title: schedule.title,
+		priority: schedule.priority,
+		tasks:[]
+	});
+	for (let task of schedule.tasks) {
 		if (task._id){
 			taskModel.findByIdAndUpdate(task._id, task, {new: true}).exec();
-			taskList.push(task._id);
+			updateSchedule.tasks.push(task._id);
 		} else {
-			let temp = new taskModel(task);
-			temp.parent = id;
-			temp.save();
-			taskList.push(temp._id);
+			let newTask = new taskModel(task);
+			newTask.parent = id;
+			updateSchedule.push(newTask._id);
+			newTask.save();
 		}
 	}
-	newSchedule.tasks = taskList;
-	scheduleModel.findByIdAndUpdate(id, newSchedule, {new:true}).exec();
+	scheduleModel.findByIdAndUpdate(schedule._id, updateSchedule, {new:true}).exec();
 }
 
 async function getTaskByDate(startDate, endDate){
 	return await taskModel.find({end:{$gte:startDate, $lte:endDate}}).populate('parent');
 }
 
-export {createSchedule, getSchedule, getScheduleById, getTaskByDate, deleteSchedule, updateScheduleById, connect};
+export {createSchedule, getSchedules, getScheduleById, getTaskByDate, deleteSchedule, updateScheduleById, connect};

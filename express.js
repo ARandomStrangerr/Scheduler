@@ -23,7 +23,7 @@ app.get('*', (req, res) => res.status(404).send("The requested path does not exi
 app.listen(PORT, listenFcn)
 
 async function getSchedules (request, response) {
-	response.status(200).send(await MongooseFunctions.getSchedule());
+	response.status(200).send(await MongooseFunctions.getSchedules());
 }
 
 async function getSchedule (request, response) {
@@ -41,28 +41,10 @@ async function getCalendar (request, response) {
 	}
 }
 
-function createSchedule (request, response){
-	if (!request.body.title || request.body.title.trim() === ""){
-		response.status(400).send("Missing schedule name");
-		return;
-	} else if (!request.body.priority || request.body.priority === ""){
-		response.status(400).send("Missing priority");
-		return;
-	}
-	for (let index in request.body.tasks){
-		if (!request.body.tasks[index].task || !request.body.tasks[index].task.trim()){
-			response.status(400).send(`Sub-task of index ${index} does not have name`);
-			return;
-		} else if (!request.body.tasks[index].end) {
-			response.status(400).send(`Sub-task of index ${index} does not have deadline`);
-			return;
-		} else if(new Date() >= new Date(request.body.tasks[index].end)){
-			response.status(400).send(`Sub-task of index ${index}, deadline cannot before the current time`);
-			return;
-		}
-	}
-	MongooseFunctions.createSchedule(request.body.title, request.body.priority, request.body.tasks);
-	response.status(200).send("Success create schedule");
+async function createSchedule (request, response){
+	console.log(request.body);
+	await MongooseFunctions.createSchedule(request.body);
+	response.status(200).send("Sucess create schedule");
 }
 
 async function deleteSchedule (request, response) {

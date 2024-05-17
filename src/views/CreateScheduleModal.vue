@@ -1,15 +1,17 @@
 <script setup>
+import Subscription from '../components/subscription/subscription.js'
 import Veil from '../components/Veil.vue'
 import Priority from '../components/CreateAndUpdateSchedulePriority.vue'
 import Task from '../components/CreateAndUpdateScheduleTask.vue'
+import Axios from 'axios'
 </script>
 
 <template>
 	<Veil>
-		<form>
-			<input class='title' placeholder='Title' v-model='formData.title'>
+		<form @submit.prevent="submitForm">
+			<input class='title' placeholder='Title' v-model='formData.scheduleName'>
 			<Priority :submitData="formData"/>
-			<Task/>
+			<Task :submitData="formData"/>
 			<div class='wrapper'>
 				<div class='button green-button' @click='submitForm'>Create</div>
 				<div class='button red-button' @click="$router.push('/')">Cancel</div>
@@ -20,6 +22,7 @@ import Task from '../components/CreateAndUpdateScheduleTask.vue'
 
 <script>
 export default {
+	inject: ['expressAddress'],
 	props: {
 		submitData: {
 			type: Object,
@@ -29,10 +32,47 @@ export default {
 	data() {
 		return {
 			formData: {
-				taskName: "",
 				priority: "",
 				tasks:[]
 			}
+		}
+	},
+	methods: {
+		submitForm() {
+			if (!this.formData.scheduleName || this.formData.title === ""){
+				Subscription.notify("notification", "Title of the task is empty", "error");
+				return;
+			}
+			if (this.formData.priority === ""){
+				Subscription.notify("notification", "Priority of the task is not selected", "error");
+				return;
+			}
+			for (let task of this.formData.tasks){
+				if(!task.taskName || task.taskName === ""){
+					Subscription.notify("notification", "There is a sub-task name is missing", "error");
+					return;
+				}
+				if (task.startDate) {
+					task.startTimeFirstOccurence = `${task.startDate}T${task.startHour}:${task.startMinute}:00Z`;
+					delete task.startDate;
+					delete task.startHour;
+					delete task.startMinute;
+				}
+				if (task.lastOccurence) task.lastOccurence = `${task.lastOccurence}T23:59:59Z`;
+				else task.lastOccurence = `${task.endDate}T23:59:59Z`;
+				task.endTimeFirstOccurence = `${task.endDate}T${task.endHour}:${task.endHour}:00Z`;
+				delete task.endDate;
+				delete task.endHour;
+				delete task.endMinute;
+			}
+			console.log(this.formData);
+			Axios.post(`${this.expressAddress}/create`, this.formData)
+				.then((response) => {
+					Subscription.notify('notification', response.data, 'success');
+					this.$router.push('/');
+				}).catch((response) => {
+					Subscription.notify("notification", response.response.data, "error");
+				});
 		}
 	}
 }
@@ -47,7 +87,7 @@ form {
 	max-height:80vh;
 	overflow-y: scroll;
 }
-.form::-webkit-scrollbar {
+form::-webkit-scrollbar {
 	display:none;
 }
 .title {
@@ -67,5 +107,9 @@ form {
 }
 .button:last-child {
 	margin-right: 0em;
+}
+.wrapper {
+	display: flex;
+	flex-direction: row;
 }
 </style>

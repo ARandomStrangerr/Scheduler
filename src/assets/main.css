@@ -50,3 +50,9 @@ textarea:focus {
 .red-button:hover {
 	background-color: #fde2e4;
 }
+.yellow-button {
+	border-color: #fdf3d9;
+}
+.yellow-button:hover {
+	background-color: #fdf3d9;
+}

@@ -9,7 +9,7 @@ import Subscription from './subscription/subscription.js'
 	<div class='left-pane'>
 		<div class='button' @click="$router.push('/create')">Add Schedule</div>
 		<div v-for='(schedule, index) of schedules' :key='schedule.id' :class="{'schedule':true, 'low-priority':schedule.priority==='Low Priority', 'medium-priority':schedule.priority==='Medium Priority', 'high-priority':schedule.priority==='High Priority', 'active':schedule.active}" @click="redirectToUpdatePage(schedule)" @mouseover="mouseOver(schedule)" @mouseout="mouseOut(schedule)">
-			{{schedule.title}}
+			{{schedule.scheduleName}}
 		</div>
 	</div>
 	<RouterView />
