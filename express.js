@@ -16,7 +16,7 @@ app.get('/get-schedule/:id', getSchedule);
 app.get('/get-schedules', getSchedules);
 app.delete('/delete-schedule/:id', deleteSchedule);
 app.put('/update-schedule/:id', updateSchedule);
-app.get('/get-calendar', getCalendar);
+app.get('/get-tasks-by-date-range', getTasksByDateRange);
 app.get('*', (req, res) => res.status(404).send("The requested path does not exists"));
 
 // start listening
@@ -31,11 +31,11 @@ async function getSchedule (request, response) {
 	response.status(200).send(responseData);
 }
 
-async function getCalendar (request, response) {
+async function getTasksByDateRange (request, response) {
 	const startDate = new Date(request.query.start);
 	const endDate = new Date(request.query.end);
 	try{
-		response.status(200).send(await MongooseFunctions.getTaskByDate(startDate, endDate));
+		response.status(200).send(await MongooseFunctions.getTaskByDateRange(startDate, endDate));
 	} catch {
 		response.status(400).send("error");
 	}
@@ -53,7 +53,7 @@ async function deleteSchedule (request, response) {
 }
 
 async function updateSchedule (request, response) {
-	await MongooseFunctions.updateScheduleById(request.body._id, request.body.title, request.body.priority, request.body.tasks)
+	await MongooseFunctions.updateScheduleById(request.body);
 	response.status(200).send("Success update schedule");
 }
 

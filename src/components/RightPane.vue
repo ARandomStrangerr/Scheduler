@@ -12,7 +12,7 @@
 		<div v-for="(row, i) of dates" :key='i' class='row'>
 			<div v-for="(cell, j) of row" :key='j' class='cell'>
 				<div :class="{'button': true, 'today':cell.today, 'not-in-month':cell.notInMonth}">{{cell.date}}</div>
-				<div v-for="(task,k) of cell.tasks" :key="k" :class="{ 'low-priority':task.parent.priority==='Low Priority', 'medium-priority':task.parent.priority==='Medium Priority', 'high-priority':task.parent.priority==='High Priority', 'active':task.active}" @mouseover="onMouseOver(task)" @mouseout="onMouseOut(task)" @click="redirectToUpdatePage(task)">{{task.task}}</div>
+				<div v-for="(task,k) of cell.tasks" :key="k" :class="{ 'low-priority':task.parent.priority==='Low Priority', 'medium-priority':task.parent.priority==='Medium Priority', 'high-priority':task.parent.priority==='High Priority', 'active':task.active}" @mouseover="onMouseOver(task)" @mouseout="onMouseOut(task)" @click="redirectToUpdatePage(task)">{{task.taskName}}</div>
 			</div>
 		</div>
 	</div>
@@ -65,15 +65,16 @@ export default {
 				if (row.length===7) rows.push(row);
 			}
 			// fetch for event within this month to display
-			let response = await Axios.get(`${this.expressAddress}/get-calendar`, {
+			let response = await Axios.get(`${this.expressAddress}/get-tasks-by-date-range`, {
 				params: {
 					start: new Date(year, month - 1, 1 - (firstDayThisMonth.getDay())),
 					end: new Date(year, month - 1, lastDayThisMonth.getDate() + 7 - (lastDayThisMonth.getDate() + firstDayThisMonth.getDay()) % 7)
 				}
 			});
+			console.log(response);
 			// display the fetched data
 			for (let task of response.data) {
-				let end = new Date(task.end);
+				let end = new Date(task.endTimeFirstOccurence);
 				let columnIndex = (end.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (end.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
 				let rowIndex = columnIndex != 6 ? Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((end.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
 				rows[rowIndex][columnIndex].tasks.push(task);
@@ -84,9 +85,10 @@ export default {
 				let mouseOutId = Subscription.subscribe(`${task.parent._id}MouseOut`, () => { // memory leak here, we need to unsub this when it is not needed
 					task.active.value = false;
 				});
-                this.unsubList.push([`${task.parent._id}MouseOver`, mouseOverId]);
-                this.unsubList.push([`${task.parent._id}MouseOut`, mouseOutId]);
+				this.unsubList.push([`${task.parent._id}MouseOver`, mouseOverId]);
+				this.unsubList.push([`${task.parent._id}MouseOut`, mouseOutId]);
 			}
+			// find today to mark it as hightlight
 			let colIndex = (this.today.getDate() + firstDayThisMonth.getDay()) % 7 != 0 ? (this.today.getDate() + firstDayThisMonth.getDay()) % 7 - 1 : 6;
 			let rowIndex = colIndex != 6 ? Math.floor((this.today.getDate() + firstDayThisMonth.getDay()) / 7) : Math.floor((this.today.getDate() + firstDayThisMonth.getDay()) / 7) - 1;
 			rows[rowIndex][colIndex].today = true;
@@ -108,17 +110,17 @@ export default {
 			this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() + 1);
 			this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
 			while (this.unsubList.length != 0){
-                let deleteElement = this.unsubList.pop();
-                Subscription.unsubscribe(deleteElement[0], deleteElement[1]);
+				let deleteElement = this.unsubList.pop();
+				Subscription.unsubscribe(deleteElement[0], deleteElement[1]);
 			}
 		});
 		Subscription.subscribe("viewLastMonth", () => {
 			this.viewMonthYear.setMonth(this.viewMonthYear.getMonth() - 1);
 			this.createDateList(this.viewMonthYear.getMonth() + 1, this.viewMonthYear.getFullYear());
-            while (this.unsubList.length != 0) {
-                let deleteElement = this.unsubList.pop();
-                Subscription.unsubscribe(deleteElement[0], deleteElement[1]);
-            }
+			while (this.unsubList.length != 0) {
+				let deleteElement = this.unsubList.pop();
+				Subscription.unsubscribe(deleteElement[0], deleteElement[1]);
+			}
 		});
 	}
 }

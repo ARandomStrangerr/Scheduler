@@ -71,8 +71,9 @@ async function deleteSchedule(id){
 
 /* update a specific schedule with all its tasks */
 async function updateScheduleById(schedule){
+	console.log(schedule);
 	let updateSchedule = new scheduleModel({
-		title: schedule.title,
+		scheduleName: schedule.scheduleName,
 		priority: schedule.priority,
 		tasks:[]
 	});
@@ -82,16 +83,49 @@ async function updateScheduleById(schedule){
 			updateSchedule.tasks.push(task._id);
 		} else {
 			let newTask = new taskModel(task);
-			newTask.parent = id;
+			newTask.parent = schedule._id;
 			updateSchedule.push(newTask._id);
 			newTask.save();
 		}
 	}
-	scheduleModel.findByIdAndUpdate(schedule._id, updateSchedule, {new:true}).exec();
+	// scheduleModel.findByIdAndUpdate(schedule._id, updateSchedule, {new:true}).exec();
 }
 
-async function getTaskByDate(startDate, endDate){
-	return await taskModel.find({end:{$gte:startDate, $lte:endDate}}).populate('parent');
+// get a list of task to display
+async function getTaskByDateRange(startDate, endDate){
+	/*
+	a = start search date
+	b = end search date
+	c = first occurance of the task
+	d = last occurance of the task
+	now we can think the problem as permutation of letters
+	initial intuitive suggest that there are 4! = 24 ways to arrage those letters
+	however, a < b and c <= d, now we have pairs (a,b) and (c,d)
+	for (a,b), there are 4 positions, we do care about its order -> 4! total way to picks, divides by 2! blank position, divide by 1! way to order
+	for (c,d), we have only 2 spaces for 2 elemens, 1!/1! = 1 ways
+	therefore there are 4C2=6 ways to choose ways to choose
+	abcd - task beyond view range - does not care
+	acbd - task start within month then extends beyond view range
+	cabd - task start before month then extends beyond view range
+	cadb - task start before month then end in view range
+	acdb - task start and end within view range
+	cdab - task before view range - does not care
+	essentially, we look for something (start within the view range) or (end within the view range) or (start before view range and end after view range).
+	*/
+	let queryClause = {
+		$or: [
+			{endTimeFirstOccurence: {$gte: startDate, $lte: endDate}}, // start within the view range
+			{lastOccurence: {$gte: startDate, $lte: endDate}}, // end within the view range
+			{
+				$and: [
+					{endTimeFirstOccurence: {$lt: startDate}},
+					{lastOccurence: {$gt: endDate}}
+				]
+			} // start before and end after the view range
+		]
+	};
+	let result = await taskModel.find(queryClause).populate("parent");
+	return result;
 }
 
-export {createSchedule, getSchedules, getScheduleById, getTaskByDate, deleteSchedule, updateScheduleById, connect};
+export {createSchedule, getSchedules, getScheduleById, getTaskByDateRange, deleteSchedule, updateScheduleById, connect};

@@ -4,6 +4,7 @@ import Priority from '../components/CreateAndUpdateSchedulePriority.vue'
 import Task from '../components/CreateAndUpdateScheduleTask.vue'
 import UpdateScheduleForm from '../components/UpdateScheduleForm.vue'
 import Axios from 'axios'
+import Subscription from '../components/subscription/subscription.js'
 </script>
 
 <template>
@@ -37,6 +38,39 @@ export default {
 	},
 	methods: {
 		submitForm() {
+			if (!this.formData.scheduleName || this.formData.title === ""){
+				Subscription.notify("notification", "Title of the task is empty", "error");
+				return;
+			}
+			if (this.formData.priority === ""){
+				Subscription.notify("notification", "Priority of the task is not selected", "error");
+				return;
+			}
+			for (let task of this.formData.tasks){
+				if(!task.taskName || task.taskName === ""){
+					Subscription.notify("notification", "There is a sub-task name is missing", "error");
+					return;
+				}
+				if (task.startDate) {
+					task.startTimeFirstOccurence = `${task.startDate}T${task.startHour}:${task.startMinute}:00Z`;
+					delete task.startDate;
+					delete task.startHour;
+					delete task.startMinute;
+				}
+				if (task.lastOccurence) task.lastOccurence = `${task.lastOccurence}T23:59:59Z`;
+				else task.lastOccurence = `${task.endDate}T23:59:59Z`;
+				task.endTimeFirstOccurence = `${task.endDate}T${task.endHour}:${task.endHour}:00Z`;
+				delete task.endDate;
+				delete task.endHour;
+				delete task.endMinute;
+			}
+			Axios.put(`${this.expressAddress}/update-schedule/${this.$route.params.id}`, this.formData)
+				.then((response) => {
+					Subscription.notify('notification', response.data, 'success');
+					this.$router.push('/');
+				}).catch((response) => {
+					Subscription.notify("notification", response.response.data, "error");
+				});
 		},
 		deleteSchedule(){
 			Axios.delete(`${this.expressAddress}/delete-schedule/${this.$route.params.id}`);
@@ -63,7 +97,6 @@ export default {
 			delete task.endTimeFirstOccurence;
 			task.lastOccurence = task.lastOccurence.split("T")[0];
 		}
-		console.log(this.formData);
 	}
 }
 </script>

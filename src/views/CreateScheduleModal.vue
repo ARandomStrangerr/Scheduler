@@ -65,7 +65,6 @@ export default {
 				delete task.endHour;
 				delete task.endMinute;
 			}
-			console.log(this.formData);
 			Axios.post(`${this.expressAddress}/create`, this.formData)
 				.then((response) => {
 					Subscription.notify('notification', response.data, 'success');
